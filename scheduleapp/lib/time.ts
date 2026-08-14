@@ -51,6 +51,22 @@ export function isoWeekKey(isoDate: string): string {
   return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
+export function addDays(isoDate: string, days: number): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/** The Monday of the ISO week containing `isoDate`. */
+export function startOfIsoWeek(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const dayNum = date.getUTCDay() || 7; // Monday = 1 ... Sunday = 7
+  date.setUTCDate(date.getUTCDate() - (dayNum - 1));
+  return date.toISOString().slice(0, 10);
+}
+
 export function formatHM(decimalHours: number): string {
   const totalMins = Math.round(decimalHours * 60);
   const h = Math.floor(((totalMins % (24 * 60)) + 24 * 60) / 60) % 24;

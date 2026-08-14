@@ -29,6 +29,14 @@ import { UNI_SESSIONS } from "./uni";
 const UPPER_DAYS: DayKey[] = ["Mon", "Thu", "Sat"];
 const REST_DAYS: DayKey[] = ["Wed", "Sun"];
 
+export type DayType = "upper" | "lower" | "rest";
+
+export function dayType(day: DayKey): DayType {
+  if (UPPER_DAYS.includes(day)) return "upper";
+  if (REST_DAYS.includes(day)) return "rest";
+  return "lower";
+}
+
 // Cardio placement, from CLAUDE.md: Mon 17:30 (after home from uni),
 // Thu 12:30 (before uni), Sat 13:30. Never Tue/Fri.
 const CARDIO_START: Partial<Record<DayKey, number>> = {
