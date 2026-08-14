@@ -58,6 +58,16 @@ model WeekOverride {
   @@index([userId, weekKey])
 }
 
+model WeightEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String // ISO date
+  weight    Float // kg
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
 // Adjusted block times for a specific day (when user pushes +15m)
 model BlockAdjustment {
   id        String   @id @default(cuid())

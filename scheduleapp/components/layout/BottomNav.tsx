@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Additional tabs (e.g. Prep) are appended here as later phases add routes.
 const NAV_ITEMS = [
   { href: "/today", label: "Today" },
   { href: "/week", label: "Week" },
   { href: "/habits", label: "Habits" },
   { href: "/log", label: "Log" },
+  { href: "/prep", label: "Prep" },
 ] as const;
 
 export function BottomNav() {
