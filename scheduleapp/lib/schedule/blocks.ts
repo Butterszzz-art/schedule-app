@@ -151,6 +151,23 @@ function buildDay(semester: SemesterKey, day: DayKey): ScheduleBlock[] {
     });
   }
 
+  // Two more meals to reach the prep blueprint's 5-meals/day cadence
+  // (roughly every 2.5-3h): breakfast/lunch/dinner above are the three
+  // main meals, these fill the mid-morning and afternoon gaps.
+  blocks.push({
+    id: id("meal-2"),
+    kind: "meal",
+    label: "Mid-morning meal",
+    start: 10.5,
+    dur: 20,
+  });
+  blocks.push({
+    id: id("meal-4"),
+    kind: "meal",
+    label: "Afternoon meal",
+    start: 16,
+    dur: 20,
+  });
   blocks.push({
     id: id("meal-dinner"),
     kind: "meal",

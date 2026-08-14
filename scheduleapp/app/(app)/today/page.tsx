@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { dayKeyForDate, getBlocksForDate } from "@/lib/schedule/blocks";
+import { getDayType, NUTRITION_TARGETS } from "@/lib/nutrition";
 import type { SemesterKey, TodayBlockView } from "@/lib/schedule/types";
 import { isoWeekKey, todayISODate } from "@/lib/time";
 import { TodayClient } from "@/components/today/TodayClient";
@@ -48,5 +49,15 @@ export default async function TodayPage() {
     })
     .sort((a, b) => a.start - b.start);
 
-  return <TodayClient initialBlocks={blocks} date={date} />;
+  const nutritionDayType = getDayType(dayKey, semester);
+  const nutritionTarget = NUTRITION_TARGETS[nutritionDayType];
+
+  return (
+    <TodayClient
+      initialBlocks={blocks}
+      date={date}
+      nutritionDayType={nutritionDayType}
+      nutritionTarget={nutritionTarget}
+    />
+  );
 }

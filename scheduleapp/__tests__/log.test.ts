@@ -19,12 +19,12 @@ describe("buildDayEntries", () => {
     const entries = buildDayEntries(
       ["2026-08-15"],
       1,
-      { "2026-08-15": { "s1-sat-gym": "done" } }, // 1 of 7 active blocks done
+      { "2026-08-15": { "s1-sat-gym": "done" } }, // 1 of 9 active blocks done
       new Set()
     );
-    expect(entries[0].totalActive).toBe(7);
+    expect(entries[0].totalActive).toBe(9);
     expect(entries[0].doneCount).toBe(1);
-    expect(entries[0].pct).toBe(14); // round(1/7 * 100)
+    expect(entries[0].pct).toBe(11); // round(1/9 * 100)
   });
 
   it("counts unmarked as active total minus done minus skipped", () => {

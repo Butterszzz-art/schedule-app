@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/layout/Header";
+import type { NutritionDayType, NutritionTarget } from "@/lib/nutrition";
 import { cascade } from "@/lib/schedule/cascade";
 import type { ScheduleBlock, TodayBlockView } from "@/lib/schedule/types";
 import { minutesSinceMidnight } from "@/lib/time";
 import { BlockCard } from "./BlockCard";
 import { HeroCard, type HeroState } from "./HeroCard";
+import { NutritionCard } from "./NutritionCard";
 import { ProgressBar } from "./ProgressBar";
 
 function toScheduleBlock(b: TodayBlockView): ScheduleBlock {
@@ -53,9 +55,13 @@ function computeHeroState(
 export function TodayClient({
   initialBlocks,
   date,
+  nutritionDayType,
+  nutritionTarget,
 }: {
   initialBlocks: TodayBlockView[];
   date: string;
+  nutritionDayType: NutritionDayType;
+  nutritionTarget: NutritionTarget;
 }) {
   const [blocks, setBlocks] = useState(initialBlocks);
   // Starts null so the server-rendered markup and the first client render
@@ -161,6 +167,18 @@ export function TodayClient({
     [blocks]
   );
 
+  const mealBlocks = useMemo(
+    () => sortedBlocks.filter((b) => b.kind === "meal"),
+    [sortedBlocks]
+  );
+  const nextMealId = useMemo(() => {
+    if (nowMinutes === null) return null;
+    return (
+      mealBlocks.find((m) => m.start * 60 > nowMinutes && m.status === null)
+        ?.id ?? null
+    );
+  }, [mealBlocks, nowMinutes]);
+
   return (
     <>
       <Header title="Today" />
@@ -172,6 +190,12 @@ export function TodayClient({
           }}
         />
         <ProgressBar blocks={blocks} />
+        <NutritionCard
+          dayType={nutritionDayType}
+          target={nutritionTarget}
+          mealBlocks={mealBlocks}
+          nextMealId={nextMealId}
+        />
         <div className="flex flex-col gap-2">
           {sortedBlocks.map((block, i) => (
             <div
