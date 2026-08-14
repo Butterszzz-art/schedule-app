@@ -22,6 +22,22 @@ export interface ScheduleBlock {
   fixed?: boolean; // true = cannot be cascaded past or disabled
 }
 
+export type BlockStatus = "done" | "skipped" | null;
+
+// A block as rendered on the Today view: base schedule data merged with
+// this date's DayLog status, BlockAdjustment start-time override, and
+// WeekOverride disabled flag.
+export interface TodayBlockView {
+  id: string;
+  kind: BlockKind;
+  label: string;
+  start: number; // effective (post-adjustment) decimal hours
+  dur: number;
+  fixed: boolean;
+  status: BlockStatus;
+  disabled: boolean;
+}
+
 export type DayKey = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 export type SemesterKey = 1 | 2;
 

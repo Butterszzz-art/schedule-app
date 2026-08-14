@@ -80,7 +80,10 @@ function buildDay(semester: SemesterKey, day: DayKey): ScheduleBlock[] {
       label: "Mobility",
       start: 7.5,
       dur: 20, // immediately after gym
-      fixed: true,
+      // Not fixed: it's coupled to gym's actual end time (CLAUDE.md: "in
+      // gym immediately after"), so a late-running gym should cascade
+      // mobility forward too, not be blocked by it.
+      fixed: false,
     });
     blocks.push({
       id: id("meal-breakfast"),

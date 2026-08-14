@@ -26,3 +26,19 @@ body {
   color: var(--foreground);
   font-family: var(--font-display), system-ui, sans-serif;
 }
+
+/* Subtle staggered shift used when a +15m cascade re-times later blocks. */
+@keyframes cascade-shift {
+  0% {
+    transform: translateY(-6px);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-cascade-shift {
+  animation: cascade-shift 300ms ease-out both;
+}
