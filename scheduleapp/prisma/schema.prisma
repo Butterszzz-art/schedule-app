@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../app/generated/prisma"
@@ -10,4 +8,64 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  password      String
+  createdAt     DateTime       @default(now())
+  logs          DayLog[]
+  weekOverrides WeekOverride[]
+  settings      UserSettings?
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  semester  Int      @default(1) // 1 or 2
+  updatedAt DateTime @updatedAt
+}
+
+// A single logged block for a specific date
+model DayLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      String // ISO date: "2026-09-01"
+  blockId   String // matches id in schedule data e.g. "s1m-gym"
+  status    String // "done" | "skipped"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date, blockId])
+  @@index([userId, date])
+}
+
+// Per-week block toggles (disabled blocks for a specific ISO week)
+model WeekOverride {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  weekKey   String // ISO week: "2026-W38"
+  dayKey    String // "Mon" | "Tue" | ...
+  blockId   String // block to disable
+  disabled  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, weekKey, dayKey, blockId])
+  @@index([userId, weekKey])
+}
+
+// Adjusted block times for a specific day (when user pushes +15m)
+model BlockAdjustment {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String // ISO date
+  blockId   String
+  startMins Int // adjusted start in minutes from midnight
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date, blockId])
 }

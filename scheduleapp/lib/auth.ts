@@ -1,12 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/db";
 
-// Single hardcoded user for this personal, single-user app.
-// Identity + password hash live in env vars, not in source.
-const AUTH_USER_EMAIL = process.env.AUTH_USER_EMAIL;
-const AUTH_USER_PASSWORD_HASH = process.env.AUTH_USER_PASSWORD_HASH;
-
+// Single-user app: the one User row is created by prisma/seed.ts.
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
   pages: {
@@ -25,19 +22,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (typeof email !== "string" || typeof password !== "string") {
           return null;
         }
-        if (!AUTH_USER_EMAIL || !AUTH_USER_PASSWORD_HASH) {
-          throw new Error(
-            "AUTH_USER_EMAIL / AUTH_USER_PASSWORD_HASH are not set in the environment"
-          );
-        }
-        if (email.toLowerCase() !== AUTH_USER_EMAIL.toLowerCase()) {
-          return null;
-        }
 
-        const valid = await bcrypt.compare(password, AUTH_USER_PASSWORD_HASH);
+        const user = await prisma.user.findUnique({
+          where: { email: email.toLowerCase() },
+        });
+        if (!user) return null;
+
+        const valid = await bcrypt.compare(password, user.password);
         if (!valid) return null;
 
-        return { id: "1", email: AUTH_USER_EMAIL };
+        return { id: user.id, email: user.email };
       },
     }),
   ],
