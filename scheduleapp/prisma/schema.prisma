@@ -79,3 +79,26 @@ model BlockAdjustment {
 
   @@unique([userId, date, blockId])
 }
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Dedup marker so the notify cron doesn't re-send a reminder for the
+// same block on the same day every time it ticks.
+model NotifiedBlock {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String // ISO date
+  blockId   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date, blockId])
+}

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/layout/Header";
+import { InstallBanner } from "@/components/pwa/InstallBanner";
+import { NotificationSetup } from "@/components/pwa/NotificationSetup";
 import type { NutritionDayType, NutritionTarget } from "@/lib/nutrition";
 import { cascade } from "@/lib/schedule/cascade";
 import type { ScheduleBlock, TodayBlockView } from "@/lib/schedule/types";
@@ -183,6 +185,7 @@ export function TodayClient({
     <>
       <Header title="Today" />
       <main className="flex flex-col gap-4 px-5 pb-4">
+        <InstallBanner />
         <HeroCard
           state={heroState}
           onPush15={() => {
@@ -216,6 +219,7 @@ export function TodayClient({
             </div>
           ))}
         </div>
+        <NotificationSetup />
       </main>
     </>
   );
