@@ -77,7 +77,28 @@ node scripts/parse-timetable.mjs path/to/export.csv  # regenerate lib/schedule/u
 
 ## Deploying
 
-See the deploy checklist shared alongside this repo, or `../scheduleapp-prompts/phase-10-deploy.md`
-for the original plan. Short version: push to GitHub, import into Vercel,
-set the env vars above (use Neon's **pooled** connection string), run
-`npx prisma migrate deploy` against production, then `vercel --prod`.
+1. Push to GitHub (the repo root is one level above this app — see below).
+2. Import the repo into Vercel, and set **Settings → General → Root
+   Directory** to `scheduleapp`. This is easy to miss: the repo also
+   contains `scheduleapp-prompts/` as a sibling directory, so the Next.js
+   app is *not* at the repo root. Without this, Vercel won't find
+   `package.json` and "builds" a static, routeless deployment in a few
+   hundred ms — every path 404s, with no build error to point at.
+3. Set the env vars listed above in the Vercel dashboard (`AUTH_URL`
+   should be the deployment's real `https://…vercel.app` URL).
+4. Redeploy.
+
+### Push notification reminders need an external cron, not Vercel Cron
+
+`/api/cron/notify` needs to be polled roughly every minute to catch each
+block's short notification window (see `lib/notify.ts`). Vercel's own Cron
+Jobs are capped at once/day on the Hobby plan, so `vercel.json`
+deliberately does **not** define a `crons` entry (a sub-daily one blocks
+the whole deployment on Hobby).
+
+Instead, point a free external scheduler — e.g. [cron-job.org](https://cron-job.org)
+— at `https://<your-app>.vercel.app/api/cron/notify` every minute, with
+header `Authorization: Bearer <CRON_SECRET>` (same value as the env var).
+`/api/push/send` uses the same bearer check if you wire up an additional
+trigger there. If you're on Vercel Pro instead, you can add the `crons`
+entry back to `vercel.json` and skip the external scheduler.
