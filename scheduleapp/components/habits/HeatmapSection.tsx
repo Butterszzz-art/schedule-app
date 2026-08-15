@@ -1,10 +1,10 @@
 import { dayKeyForDate } from "@/lib/schedule/blocks";
 import {
-  HABIT_CATEGORIES,
   heatmapForCategory,
+  visibleHabitCategories,
   type LogsByDate,
 } from "@/lib/habits";
-import type { SemesterKey, DayKey } from "@/lib/schedule/types";
+import type { SemesterKey, DayKey, ScheduleMode } from "@/lib/schedule/types";
 
 const DAY_LETTER: Record<DayKey, string> = {
   Mon: "M",
@@ -27,16 +27,18 @@ export function HeatmapSection({
   logsByDate,
   semester,
   today,
+  mode,
 }: {
   logsByDate: LogsByDate;
   semester: SemesterKey;
   today: string;
+  mode: ScheduleMode;
 }) {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="section-label">Last 7 days</h2>
       <div className="flex flex-col gap-2.5">
-        {HABIT_CATEGORIES.map((cat) => {
+        {visibleHabitCategories(mode).map((cat) => {
           const cells = heatmapForCategory(logsByDate, semester, cat, today);
           return (
             <div key={cat.key} className="flex items-center gap-3">

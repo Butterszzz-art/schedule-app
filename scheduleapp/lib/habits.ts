@@ -1,5 +1,5 @@
 import { getBlocksForDate } from "./schedule/blocks";
-import type { BlockKind, SemesterKey } from "./schedule/types";
+import type { BlockKind, ScheduleMode, SemesterKey } from "./schedule/types";
 import { addDays } from "./time";
 
 export interface HabitCategory {
@@ -7,10 +7,14 @@ export interface HabitCategory {
   label: string;
   icon: string;
   kinds: BlockKind[];
+  // Only shown/tracked during PREP mode -- e.g. posing doesn't exist as a
+  // block kind outside prep, so it'd be permanently zero otherwise.
+  prepOnly?: boolean;
 }
 
 export const HABIT_CATEGORIES: HabitCategory[] = [
   { key: "gym", label: "Gym", icon: "💪", kinds: ["gym"] },
+  { key: "posing", label: "Posing", icon: "🕴", kinds: ["posing"], prepOnly: true },
   { key: "ma", label: "Martial Arts", icon: "🥋", kinds: ["ma"] },
   { key: "cardio", label: "Cardio", icon: "🏃", kinds: ["cardio"] },
   { key: "mobility", label: "Mobility", icon: "🧘", kinds: ["mobility"] },
@@ -19,6 +23,11 @@ export const HABIT_CATEGORIES: HabitCategory[] = [
   { key: "reading", label: "Reading", icon: "📖", kinds: ["read"] },
   { key: "chores", label: "Chores", icon: "🧹", kinds: ["chores"] },
 ];
+
+/** Categories visible for a given mode -- prepOnly ones hidden in normal mode. */
+export function visibleHabitCategories(mode: ScheduleMode): HabitCategory[] {
+  return HABIT_CATEGORIES.filter((c) => !c.prepOnly || mode === "prep");
+}
 
 export type LogsByDate = Record<string, Record<string, string | null | undefined>>;
 

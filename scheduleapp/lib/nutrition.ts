@@ -1,22 +1,26 @@
-import { SCHEDULE } from "./schedule/blocks";
+import { dayType } from "./schedule/blocks";
 import type { DayKey, SemesterKey } from "./schedule/types";
 
 export type NutritionDayType = "heavy_lift" | "moderate_lift" | "rest";
 
+// Upper/Lower/Rest is a pure day-of-week classification (see
+// lib/schedule/blocks.ts's dayType()) that's identical in both schedule
+// modes -- Wed/Sun are nutritionally "rest" whether they get MA (normal
+// mode) or posing+cardio+study (prep mode). `semester` is accepted for
+// call-site stability but unused; nutrition targets don't depend on it.
 export function getDayType(
   dayKey: DayKey,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for call-site stability
   semester: SemesterKey
 ): NutritionDayType {
-  const blocks = SCHEDULE[semester][dayKey];
-  const hasGym = blocks.some((b) => b.kind === "gym");
-  const hasMA = blocks.some((b) => b.kind === "ma");
-
-  if (hasMA || !hasGym) return "rest"; // MA days = True Rest per blueprint
-
-  // Gym days: Upper = heavy, Lower = moderate.
-  const gymBlock = blocks.find((b) => b.kind === "gym");
-  if (gymBlock?.label.toLowerCase().includes("upper")) return "heavy_lift";
-  return "moderate_lift";
+  switch (dayType(dayKey)) {
+    case "upper":
+      return "heavy_lift";
+    case "lower":
+      return "moderate_lift";
+    case "rest":
+      return "rest";
+  }
 }
 
 export interface NutritionTarget {

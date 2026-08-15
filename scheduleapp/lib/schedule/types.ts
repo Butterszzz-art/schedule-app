@@ -5,6 +5,7 @@ export type BlockKind =
   | "ma"
   | "cardio"
   | "mobility"
+  | "posing"
   | "study"
   | "uni"
   | "commute"
@@ -12,6 +13,11 @@ export type BlockKind =
   | "chores"
   | "read"
   | "free";
+
+// 'prep': Aug 16 - Nov 2, 2026 (show prep window) -- posing blocks, MA
+// suspended, cardio expands to 5 days. 'normal': everything outside that
+// window. Derived from a date, never stored -- see lib/schedule/mode.ts.
+export type ScheduleMode = "prep" | "normal";
 
 export interface ScheduleBlock {
   id: string;
@@ -43,6 +49,7 @@ export type SemesterKey = 1 | 2;
 
 export type WeekSchedule = Record<DayKey, ScheduleBlock[]>;
 export type SemesterSchedule = Record<SemesterKey, WeekSchedule>;
+export type FullSchedule = Record<ScheduleMode, SemesterSchedule>;
 
 // A real, dated university class session (lecture/seminar/tutorial/exam/...),
 // imported from a UvA timetable export. Unlike ScheduleBlock, these are

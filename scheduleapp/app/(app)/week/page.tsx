@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { dayKeyForDate } from "@/lib/schedule/blocks";
+import { getScheduleMode } from "@/lib/schedule/mode";
 import type { SemesterKey } from "@/lib/schedule/types";
 import { addDays, isoWeekKey, startOfIsoWeek, todayISODate } from "@/lib/time";
 import { WeekClient } from "@/components/week/WeekClient";
@@ -10,6 +11,7 @@ export default async function WeekPage() {
   const userId = session!.user.id;
 
   const today = todayISODate();
+  const mode = getScheduleMode(today);
   const weekKey = isoWeekKey(today);
   const monday = startOfIsoWeek(today);
   const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -41,6 +43,7 @@ export default async function WeekPage() {
       weekKey={weekKey}
       weekDates={weekDates}
       today={today}
+      mode={mode}
       initialSemester={semester}
       initialDisabledKeys={initialDisabledKeys}
       logsByDate={logsByDate}

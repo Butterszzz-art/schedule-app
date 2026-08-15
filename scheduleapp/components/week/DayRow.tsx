@@ -1,5 +1,5 @@
 import { dayType } from "@/lib/schedule/blocks";
-import type { DayKey, ScheduleBlock } from "@/lib/schedule/types";
+import type { DayKey, ScheduleBlock, ScheduleMode } from "@/lib/schedule/types";
 import { formatHM } from "@/lib/time";
 
 const DAY_LABEL: Record<DayKey, string> = {
@@ -12,11 +12,12 @@ const DAY_LABEL: Record<DayKey, string> = {
   Sun: "Sunday",
 };
 
-const TYPE_BADGE: Record<ReturnType<typeof dayType>, string> = {
-  upper: "UPPER 💪",
-  lower: "LOWER 💪",
-  rest: "MARTIAL ARTS 🥋 REST",
-};
+// Rest days (Wed/Sun) show what actually replaces MA in prep mode.
+function typeBadge(type: ReturnType<typeof dayType>, mode: ScheduleMode): string {
+  if (type === "upper") return "UPPER 💪";
+  if (type === "lower") return "LOWER 💪";
+  return mode === "prep" ? "REST · POSING + CARDIO" : "MARTIAL ARTS 🥋 REST";
+}
 
 function formatDateLabel(date: string): string {
   return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", {
@@ -29,6 +30,7 @@ function formatDateLabel(date: string): string {
 export function DayRow({
   dayKey,
   date,
+  mode,
   blocks,
   disabledIds,
   statusByBlock,
@@ -40,6 +42,7 @@ export function DayRow({
 }: {
   dayKey: DayKey;
   date: string;
+  mode: ScheduleMode;
   blocks: ScheduleBlock[];
   disabledIds: Set<string>;
   statusByBlock: Record<string, string | null | undefined>;
@@ -82,7 +85,7 @@ export function DayRow({
             </span>
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-[11px] text-foreground/50">
-            <span>{TYPE_BADGE[type]}</span>
+            <span>{typeBadge(type, mode)}</span>
             {offCount > 0 && <span>· {offCount} off</span>}
           </div>
         </div>

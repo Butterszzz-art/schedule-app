@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { calcStreaks, weeklyScore, type LogsByDate } from "@/lib/habits";
+import { getScheduleMode } from "@/lib/schedule/mode";
 import type { SemesterKey } from "@/lib/schedule/types";
 import { startOfIsoWeek, todayISODate } from "@/lib/time";
 import { Header } from "@/components/layout/Header";
@@ -14,6 +15,7 @@ export default async function HabitsPage() {
 
   const today = todayISODate();
   const weekStart = startOfIsoWeek(today);
+  const mode = getScheduleMode(today);
 
   const [settings, logs] = await Promise.all([
     prisma.userSettings.findUnique({ where: { userId } }),
@@ -37,9 +39,19 @@ export default async function HabitsPage() {
     <>
       <Header title="Habits" />
       <main className="flex flex-col gap-5 px-5 pb-4">
+        {mode === "prep" && (
+          <p className="rounded-lg border border-[#E0900033] bg-[#1A1000] px-3 py-2 text-[11px] text-[#E09000]">
+            🏆 Posing streak counts toward show readiness — protect it.
+          </p>
+        )}
         <WeeklyScore pct={pct} />
-        <StreakGrid streaks={streaks} />
-        <HeatmapSection logsByDate={logsByDate} semester={semester} today={today} />
+        <StreakGrid streaks={streaks} mode={mode} />
+        <HeatmapSection
+          logsByDate={logsByDate}
+          semester={semester}
+          today={today}
+          mode={mode}
+        />
       </main>
     </>
   );

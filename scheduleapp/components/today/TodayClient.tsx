@@ -6,11 +6,12 @@ import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { NotificationSetup } from "@/components/pwa/NotificationSetup";
 import type { NutritionDayType, NutritionTarget } from "@/lib/nutrition";
 import { cascade } from "@/lib/schedule/cascade";
-import type { ScheduleBlock, TodayBlockView } from "@/lib/schedule/types";
+import type { ScheduleBlock, ScheduleMode, TodayBlockView } from "@/lib/schedule/types";
 import { minutesSinceMidnight } from "@/lib/time";
 import { BlockCard } from "./BlockCard";
 import { HeroCard, type HeroState } from "./HeroCard";
 import { NutritionCard } from "./NutritionCard";
+import { PrepModeBanner } from "./PrepModeBanner";
 import { ProgressBar } from "./ProgressBar";
 
 function toScheduleBlock(b: TodayBlockView): ScheduleBlock {
@@ -57,11 +58,13 @@ function computeHeroState(
 export function TodayClient({
   initialBlocks,
   date,
+  mode,
   nutritionDayType,
   nutritionTarget,
 }: {
   initialBlocks: TodayBlockView[];
   date: string;
+  mode: ScheduleMode;
   nutritionDayType: NutritionDayType;
   nutritionTarget: NutritionTarget;
 }) {
@@ -185,6 +188,7 @@ export function TodayClient({
     <>
       <Header title="Today" />
       <main className="flex flex-col gap-4 px-5 pb-4">
+        {mode === "prep" && <PrepModeBanner today={date} />}
         <InstallBanner />
         <HeroCard
           state={heroState}

@@ -1,80 +1,91 @@
 # Phase 5 — Habits View + Streaks
 
 ## Goal
-Show per-category habit streaks, totals, and a 7-day heatmap. This is the motivation layer — it should make streaks feel worth protecting.
+Per-category streaks, totals, and a 7-day heatmap. The posing habit only appears during prep mode. Everything is driven by real DayLog data.
 
 ## Route
 `app/(app)/habits/page.tsx`
 
 ## Habit categories
-Each category maps to one or more block kinds:
+Show posing category only when current mode is 'prep':
 
-| Key | Label | Icon | Block kinds |
-|-----|-------|------|-------------|
-| gym | Gym | 💪 | gym |
-| ma | Martial Arts | 🥋 | ma |
-| cardio | Cardio | 🏃 | cardio |
-| mobility | Mobility | 🧘 | mobility |
-| study | Study | 📚 | study |
-| nutrition | Nutrition | 🍱 | meal, prep |
-| reading | Reading | 📖 | read |
-| chores | Chores | 🧹 | chores |
+| Key | Label | Icon | Kinds | Prep only? |
+|-----|-------|------|-------|------------|
+| gym | Gym | 💪 | gym | No |
+| posing | Posing | 🕴 | posing | YES |
+| cardio | Cardio | 🏃 | cardio | No |
+| mobility | Mobility | 🧘 | mobility | No |
+| study | Study | 📚 | study | No |
+| nutrition | Nutrition | 🍱 | meal, prep | No |
+| reading | Reading | 📖 | read | No |
+| chores | Chores | 🧹 | chores | No |
 
-## Data fetching
-Server component fetches ALL `DayLog` entries for the current user, sorted by date ascending. Pass to client component.
-
-## Streak calculation logic
-For each habit category, across all logged dates in order:
-- A day **counts** for a category if at least one block of that kind is logged as "done"
-- A day **breaks** the streak if the schedule had blocks of that kind on that day AND none were marked done (or they were marked skipped)
-- Days where the schedule has no blocks of that kind (e.g. gym on a rest day) are **ignored** — they neither extend nor break the streak
-
+## Streak calculation
 ```typescript
-function calcStreaks(allLogs: Record<string, Record<string, string>>, sem: SemesterKey) {
-  // allLogs: { "2026-09-01": { "s1m-gym": "done", ... }, ... }
-  // For each category:
-  //   iterate dates in order
-  //   check if the day's schedule (for that day's weekday) has blocks of that kind
-  //   if yes: done → streak++, not done → streak = 0
-  //   if no: skip
-  // Return: { [categoryKey]: { streak: number, best: number, total: number } }
+function calcStreaks(
+  allLogs: Record<string, Record<string, string>>,
+  mode: ScheduleMode,
+  sem: SemesterKey
+) {
+  // For each date in allLogs (sorted asc):
+  //   Get the day's weekday (Mon/Tue/etc)
+  //   Get that day's schedule: SCHEDULE[mode][sem][dayKey]
+  //   For each habit category:
+  //     Check if any blocks of that kind exist on this day
+  //     If yes and at least one marked "done": streak++, total++
+  //     If yes and none marked "done": streak = 0 (break)
+  //     If no blocks of that kind on this day: skip (don't break)
+  // Return: { [categoryKey]: { streak, best, total } }
 }
 ```
 
+Key rule: a day with no scheduled blocks of a kind does NOT break the streak.
+Example: gym streak should not break on Wed/Sun (no gym those days).
+Example: posing streak should not break on days before prep started.
+
 ## Components
 
+### `<WeeklyScore>`
+Top of page. One big number: overall % completion across all habits this week.
+Label: "this week". Colour: acid green.
+
 ### `<StreakGrid>`
-2-column grid of `<StreakCard>` components.
+2-column grid of `<StreakCard>`.
 
 ### `<StreakCard>`
-Per habit category:
-- Icon (large, 24px)
-- Category label
-- Current streak number (large, bold)
+- Icon (20px)
+- Label
+- Streak number (large, bold)
 - "day streak" label
-- Total completed count (small, muted)
-- Card border glows in accent colour at 3+ days, bright green at 7+, gold at 30+
+- Total completed (small, muted)
+- Border glow:
+  - 3–6 days: `#4ADE8044`
+  - 7–29 days: `#4ADE80`
+  - 30+ days: `#C8F060` (gold treatment)
+- Posing card: amber accent `#E09000`, only shown in prep mode
 
 ### `<HeatmapSection>`
-Below the grid. Title "Last 7 days". One row per category.
-Each row:
-- Category icon + name on the left
-- 7 day columns (Mon–Sun for the current week, or last 7 calendar days)
-- Each cell: small coloured square
-  - Empty/no blocks that day: `#141414` (no expectation)
-  - Blocks expected, none done: `#1A1A1A` (missed)
-  - Partially done: `#4ADE8044` (partial)
-  - All done: `#C8F060` (full, acid green)
-  - Today (not yet over): outlined, `#333` border
-- Day letter label below each column (M T W T F S S)
+Title "Last 7 days". One row per category (posing row only in prep mode).
 
-### `<WeeklyScore>`
-At the top, above the grid. One number: the week's overall completion percentage across all habit categories. Large display number in acid green. Label: "this week".
+Each row:
+- Category icon + name (left, 60px wide)
+- 7 day squares
+- Colours:
+  - No blocks expected: `#141414` (invisible)
+  - Blocks expected, none done: `#1E1E1E` (missed)
+  - Partial: `#4ADE8033`
+  - Full: `#C8F060`
+  - Today (ongoing): square with `#333` border
+- Day letter below: M T W T F S S
+
+## Prep mode note
+If current mode is prep, show a small amber line below the streak grid:
+"🏆 Posing streak counts toward show readiness — protect it."
 
 ## Done when
-- Streaks calculate correctly from real DayLog data
-- Marking a block done on Today view updates the streak on Habits view after navigation
-- 7-day heatmap reflects actual completion per category per day
-- Rest days (no gym block) don't break the gym streak
-- Cards glow appropriately at 3/7/30 day milestones
+- Posing card appears in prep mode, hidden in normal mode
+- Gym streak does not break on Wed/Sun
+- Posing streak does not break on days before Aug 16
+- Heatmap correctly shows missed vs completed vs no-expectation days
 - Weekly score is accurate
+- Streak glow updates when milestones are hit

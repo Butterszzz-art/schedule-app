@@ -30,14 +30,22 @@ export function StreakCard({
   result: StreakResult;
 }) {
   const { borderColor, boxShadow } = glowStyle(result.streak);
+  const isPosing = category.key === "posing";
 
   return (
     <div
       className="flex flex-col gap-2 rounded-xl border bg-[#0E0E0E] p-4"
-      style={{ borderColor, boxShadow }}
+      style={
+        isPosing
+          ? { borderColor: "#E0900055", boxShadow: "0 0 10px 0 #E0900022" }
+          : { borderColor, boxShadow }
+      }
     >
       <span className="text-2xl leading-none">{category.icon}</span>
-      <span className="text-xs font-semibold text-foreground/60">
+      <span
+        className={`text-xs font-semibold ${isPosing ? "" : "text-foreground/60"}`}
+        style={isPosing ? { color: "#E09000" } : undefined}
+      >
         {category.label}
       </span>
       <div className="flex items-baseline gap-1.5">

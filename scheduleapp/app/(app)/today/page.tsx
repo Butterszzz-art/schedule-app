@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { dayKeyForDate, getBlocksForDate } from "@/lib/schedule/blocks";
+import { getScheduleMode } from "@/lib/schedule/mode";
 import { getDayType, NUTRITION_TARGETS } from "@/lib/nutrition";
 import type { SemesterKey, TodayBlockView } from "@/lib/schedule/types";
 import { isoWeekKey, todayISODate } from "@/lib/time";
@@ -14,6 +15,7 @@ export default async function TodayPage() {
   const date = todayISODate();
   const weekKey = isoWeekKey(date);
   const dayKey = dayKeyForDate(date);
+  const mode = getScheduleMode(date);
 
   const [settings, logs, overrides, adjustments] = await Promise.all([
     prisma.userSettings.findUnique({ where: { userId } }),
@@ -56,6 +58,7 @@ export default async function TodayPage() {
     <TodayClient
       initialBlocks={blocks}
       date={date}
+      mode={mode}
       nutritionDayType={nutritionDayType}
       nutritionTarget={nutritionTarget}
     />

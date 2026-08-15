@@ -3,14 +3,17 @@
 import { useMemo, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { getBlocksForDate } from "@/lib/schedule/blocks";
-import type { DayKey, SemesterKey } from "@/lib/schedule/types";
+import { getScheduleMode } from "@/lib/schedule/mode";
+import type { DayKey, ScheduleMode, SemesterKey } from "@/lib/schedule/types";
 import { DayRow } from "./DayRow";
+import { ModeHeader } from "./ModeHeader";
 import { SemesterToggle } from "./SemesterToggle";
 
 export function WeekClient({
   weekKey,
   weekDates,
   today,
+  mode,
   initialSemester,
   initialDisabledKeys,
   logsByDate,
@@ -18,6 +21,7 @@ export function WeekClient({
   weekKey: string;
   weekDates: { date: string; dayKey: DayKey }[];
   today: string;
+  mode: ScheduleMode;
   initialSemester: SemesterKey;
   initialDisabledKeys: string[];
   logsByDate: Record<string, Record<string, string | null | undefined>>;
@@ -84,11 +88,15 @@ export function WeekClient({
     });
   };
 
+  // Each day's badge reflects that specific date's own mode -- not the
+  // page-level `mode` (computed from `today`) -- so a week straddling the
+  // Aug 16 prep-mode boundary doesn't mislabel days before/after it.
   const days = useMemo(
     () =>
       weekDates.map(({ date, dayKey }) => ({
         date,
         dayKey,
+        dayMode: getScheduleMode(date),
         blocks: getBlocksForDate(date, semester).filter(
           (b) => b.kind !== "sleep"
         ),
@@ -100,9 +108,10 @@ export function WeekClient({
     <>
       <Header title="Week" />
       <main className="flex flex-col gap-4 px-5 pb-4">
+        <ModeHeader mode={mode} />
         <SemesterToggle semester={semester} onChange={changeSemester} />
         <div className="flex flex-col gap-2">
-          {days.map(({ date, dayKey, blocks }) => {
+          {days.map(({ date, dayKey, dayMode, blocks }) => {
             const disabledIds = new Set(
               [...disabledKeys]
                 .filter((k) => k.startsWith(`${dayKey}:`))
@@ -113,6 +122,7 @@ export function WeekClient({
                 key={dayKey}
                 dayKey={dayKey}
                 date={date}
+                mode={dayMode}
                 blocks={blocks}
                 disabledIds={disabledIds}
                 statusByBlock={logsByDate[date] ?? {}}

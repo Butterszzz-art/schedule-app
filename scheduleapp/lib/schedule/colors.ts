@@ -8,6 +8,7 @@ export const BLOCK_COLORS: Record<BlockKind, { bg: string; accent: string }> = {
   ma: { bg: "#1A0A08", accent: "#F87171" },
   cardio: { bg: "#141414", accent: "#94A3B8" },
   mobility: { bg: "#1A0814", accent: "#F472B6" },
+  posing: { bg: "#1A1000", accent: "#E09000" },
   study: { bg: "#08101A", accent: "#60A5FA" },
   uni: { bg: "#0E0820", accent: "#A78BFA" },
   commute: { bg: "#121210", accent: "#7A7A6A" },

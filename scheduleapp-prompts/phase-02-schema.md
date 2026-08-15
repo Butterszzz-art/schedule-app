@@ -1,13 +1,11 @@
-# Phase 2 — Database Schema + Seed
+# Phase 2 — Database Schema + Schedule Data
 
 ## Goal
-Define the full Prisma schema covering users, the base schedule, daily logs, and week overrides. Seed the database with the complete 7-day schedule for both semesters.
+Define the Prisma schema and write the complete TypeScript schedule data for both modes (prep/normal) and both semesters. This is the foundation everything else reads from.
 
 ## Schema
 
 ```prisma
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,130 +16,201 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  logs      DayLog[]
+  id            String         @id @default(cuid())
+  email         String         @unique
+  password      String
+  createdAt     DateTime       @default(now())
+  logs          DayLog[]
   weekOverrides WeekOverride[]
-  settings  UserSettings?
+  adjustments   BlockAdjustment[]
+  weightEntries WeightEntry[]
+  pushSubs      PushSubscription[]
+  settings      UserSettings?
 }
 
 model UserSettings {
-  id        String  @id @default(cuid())
-  userId    String  @unique
-  user      User    @relation(fields: [userId], references: [id])
-  semester  Int     @default(1)   // 1 or 2
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  semester  Int      @default(1)   // 1 or 2
   updatedAt DateTime @updatedAt
 }
 
-// A single logged block for a specific date
 model DayLog {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
-  date      String   // ISO date: "2026-09-01"
-  blockId   String   // matches id in schedule data e.g. "s1m-gym"
+  date      String   // "2026-09-01"
+  blockId   String   // matches id in blocks.ts
   status    String   // "done" | "skipped"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@unique([userId, date, blockId])
   @@index([userId, date])
 }
 
-// Per-week block toggles (disabled blocks for a specific ISO week)
 model WeekOverride {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  weekKey   String   // ISO week: "2026-W38"
-  dayKey    String   // "Mon" | "Tue" | ...
-  blockId   String   // block to disable
-  disabled  Boolean  @default(true)
+  id       String  @id @default(cuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id])
+  weekKey  String  // "2026-W38"
+  dayKey   String  // "Mon" | "Tue" | ...
+  blockId  String
+  disabled Boolean @default(true)
   createdAt DateTime @default(now())
-
   @@unique([userId, weekKey, dayKey, blockId])
   @@index([userId, weekKey])
 }
 
-// Adjusted block times for a specific day (when user pushes +15m)
 model BlockAdjustment {
   id        String   @id @default(cuid())
   userId    String
-  date      String   // ISO date
+  user      User     @relation(fields: [userId], references: [id])
+  date      String
   blockId   String
   startMins Int      // adjusted start in minutes from midnight
   createdAt DateTime @default(now())
-
   @@unique([userId, date, blockId])
+}
+
+model WeightEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      String
+  weight    Float    // kg
+  createdAt DateTime @default(now())
+  @@unique([userId, date])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }
 ```
 
-## Schedule data in code (not DB)
+## `lib/schedule/types.ts`
 
-The base schedule blocks live in `lib/schedule/blocks.ts` as a TypeScript constant — **not in the database**. The DB only stores what changes (logs, overrides, adjustments). This keeps queries simple and the schedule data versioned in code.
-
-### `lib/schedule/types.ts`
 ```typescript
 export type BlockKind =
   | 'sleep' | 'meal' | 'gym' | 'ma' | 'cardio'
-  | 'mobility' | 'study' | 'uni' | 'commute'
-  | 'prep' | 'chores' | 'read' | 'free'
+  | 'mobility' | 'posing' | 'study' | 'uni'
+  | 'commute' | 'prep' | 'chores' | 'read' | 'free'
 
 export interface ScheduleBlock {
   id: string
   kind: BlockKind
   label: string
-  start: number     // decimal hours e.g. 6.5 = 06:30
-  dur: number       // duration in minutes
-  fixed?: boolean   // true = cannot be cascaded past or disabled
+  start: number      // decimal hours e.g. 6.5 = 06:30
+  dur: number        // duration in minutes
+  fixed?: boolean    // cannot be cascaded past or disabled
 }
 
 export type DayKey = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun'
 export type SemesterKey = 1 | 2
-
+export type ScheduleMode = 'prep' | 'normal'
 export type WeekSchedule = Record<DayKey, ScheduleBlock[]>
-export type SemesterSchedule = Record<SemesterKey, WeekSchedule>
 ```
 
-### `lib/schedule/blocks.ts`
-Port the full schedule data from the reference artifact (`schedule-app.jsx`) into typed TypeScript. Include both semesters. Key rules encoded in the data:
-- Cardio blocks only appear on Upper days: Mon, Thu, Sat
-- Mon cardio at 17.5 (after returning home from uni)
-- Thu cardio at 12.5 (before uni, 6h+ post-gym)
-- Sat cardio at 13.5
-- Tue and Fri have NO cardio blocks — never add them
-- Wed and Sun are rest days (MA, no lifting)
-- fixed: true on all uni sessions that cannot be toggled
+## `lib/schedule/mode.ts`
 
-### `lib/schedule/cascade.ts`
+```typescript
+import { ScheduleMode } from './types'
+
+const PREP_START = new Date('2026-08-16T00:00:00')
+const PREP_END   = new Date('2026-11-02T23:59:59')
+
+export function getScheduleMode(date: Date = new Date()): ScheduleMode {
+  return date >= PREP_START && date <= PREP_END ? 'prep' : 'normal'
+}
+
+export function isPrep(date?: Date): boolean {
+  return getScheduleMode(date) === 'prep'
+}
+```
+
+## `lib/schedule/blocks.ts`
+
+Write the full schedule as:
+```typescript
+export const SCHEDULE: Record<ScheduleMode, Record<SemesterKey, WeekSchedule>> = {
+  prep: {
+    1: { Mon: [...], Tue: [...], Wed: [...], Thu: [...], Fri: [...], Sat: [...], Sun: [...] },
+    2: { Mon: [...], Tue: [...], Wed: [...], Thu: [...], Fri: [...], Sat: [...], Sun: [...] },
+  },
+  normal: {
+    1: { ... },
+    2: { ... },
+  }
+}
+```
+
+### PREP MODE rules (Aug 16 – Nov 2)
+- No MA blocks anywhere
+- Posing block daily at 05:30, dur: 25 min, kind: 'posing'
+- Cardio on Mon (17:30), Thu (13:00), Sat (13:30), Wed (06:30), Sun (06:30) — NOT Tue or Fri
+- Study blocks are descending: 2h block → short break meal → 1.5h block on gym days; add 1h block on Wed/Sun free days
+- Wed/Sun: posing → M1 → cardio → M2 → study blocks → chores/prep as usual
+
+### NORMAL MODE rules (outside prep)
+- MA blocks on Wed/Sun: 07:00–08:15 (kind: 'ma'), commute to SP at 06:33
+- No posing blocks
+- Cardio only on Mon (17:30), Thu (13:00), Sat (13:30)
+- Wed/Sun: MA → mobility → study/chores/prep
+
+### Both modes — shared rules
+- Gym 06:00–07:30 Mon/Tue/Thu/Fri. Sat: 06:30–08:00
+- Mobility 20 min post-gym (kind: 'mobility', fixed: false)
+- Wake 05:30, sleep 21:45
+- Meals: M1 pre-gym/activity, M2 post-gym, M3 ~12:00, M4 mid-afternoon, M5 19:30
+- Reading 21:00–21:30 daily
+- Chores: Wed 16:00 (1h) + Sun 07:30 (1h)
+- Meal prep: Wed 17:00 mini batch (1h) + Sun 12:30 main batch (3h)
+- Lectures before 13:00 are skipped — only mandatory sessions and ≥13:00 lectures attended
+
+### Semester differences (uni blocks only)
+Sem 1 uni blocks:
+- Mon: Wetensch. lecture 13:00, Tutorial 15:00 (fixed)
+- Tue: Van Perceptie 13:00, Lin. Algebra 15:00 (fixed)
+- Wed: Practical 09:00 (mandatory, fixed)
+- Thu: Tutorial 09:00 (mandatory, fixed), Lin.Alg PS study block 16:00
+- Fri: Seminar 13:00, Lecture 15:00 (fixed)
+
+Sem 2 uni blocks:
+- Mon: Seminar 11:00 (mandatory, fixed), Computer lab 13:00, Leren&Geh 15:00, Experimentatie 17:00 (all fixed)
+- Tue: Exp. 13:00, Lin. Algebra 15:00, Exp. eve 17:00 (fixed)
+- Wed: Computer lab 13:00 (fixed)
+- Thu: Leren&Geh 13:00 (fixed), Lin.Alg PS 16:00
+- Fri: Exp. seminar 09:00 (mandatory, fixed), Lin.Alg+L&G 13:00, Seminar 15:00 (fixed)
+
+## `lib/schedule/cascade.ts`
+
 ```typescript
 export function cascade(
   blocks: ScheduleBlock[],
   changedIdx: number,
   newEndMins: number
 ): ScheduleBlock[] {
-  // Push all subsequent non-fixed blocks forward
-  // Stop at any fixed block
-  // Return new array (do not mutate)
+  const result = blocks.map(b => ({ ...b }))
+  let cursor = newEndMins
+  for (let i = changedIdx + 1; i < result.length; i++) {
+    if (result[i].fixed) break
+    const origStart = Math.round(result[i].start * 60)
+    if (origStart >= cursor) break
+    result[i].start = cursor / 60
+    cursor += result[i].dur
+  }
+  return result
 }
 ```
 
 ## Seed script
-
-`prisma/seed.ts` — create one user with:
-- email: your chosen login email
-- password: bcrypt hash of your chosen password
-
-Run with `npx prisma db seed`.
-
-Add to `package.json`:
-```json
-"prisma": {
-  "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
-}
-```
+`prisma/seed.ts` — create one user with bcrypt-hashed password.
 
 ## Migrations
 ```bash
@@ -150,13 +219,11 @@ npx prisma db seed
 ```
 
 ## Done when
-- `npx prisma studio` shows all tables created
-- Seed user exists in the User table
-- `lib/schedule/blocks.ts` exports both semesters with all 7 days
-- Cascade function has unit tests (create `__tests__/cascade.test.ts`)
-- No cardio blocks on Tue or Fri in either semester
-
-## Notes
-- Keep the schedule as static TypeScript data — do not try to store blocks in the DB
-- The `blockId` in DayLog/WeekOverride/BlockAdjustment must exactly match the `id` fields in `blocks.ts`
-- Add a comment at the top of `blocks.ts`: `// Cardio rule: Upper days only (Mon/Thu/Sat). Never after lower body (Tue/Fri).`
+- All tables created in Neon
+- `SCHEDULE.prep[1].Wed` has posing + cardio + study blocks, no MA
+- `SCHEDULE.normal[1].Wed` has MA blocks, no posing
+- `SCHEDULE.prep[1].Tue` has NO cardio block
+- `SCHEDULE.prep[1].Mon` has cardio at 17:30
+- `getScheduleMode(new Date('2026-09-01'))` returns 'prep'
+- `getScheduleMode(new Date('2026-12-01'))` returns 'normal'
+- Cascade unit tests pass

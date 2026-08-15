@@ -1,74 +1,75 @@
-# Phase 4 — Week View + Semester Toggle
+# Phase 4 — Week View + Mode Banner + Semester Toggle
 
 ## Goal
-Let the user see the full week at a glance and toggle individual blocks on/off for the current week. Semester switching lives in the header and persists to the DB.
+Full week overview with block toggles, semester switching, and a clear mode indicator. The user needs to see at a glance what each day looks like and turn off individual blocks for the current week.
 
 ## Route
 `app/(app)/week/page.tsx`
 
 ## Data fetching
-Server component fetches:
-1. User's semester setting from `UserSettings`
-2. All `WeekOverride` entries for the current ISO week
-3. All `DayLog` entries for the current week (Mon–Sun) to show completion state
+1. User's semester from `UserSettings`
+2. Current schedule mode from `getScheduleMode()`
+3. All `WeekOverride` entries for the current ISO week
+4. All `DayLog` entries for Mon–Sun this week (for completion bars)
 
-## API routes needed
+## API routes
 
 ### `PATCH /api/settings`
 Body: `{ semester: 1 | 2 }`
-- Upsert `UserSettings` for the current user
-- Returns updated settings
 
 ### `POST /api/overrides`
 Body: `{ weekKey, dayKey, blockId, disabled: boolean }`
-- Upsert a WeekOverride entry
-- `disabled: false` effectively re-enables a block (or delete the record)
 
 ## Components
 
+### `<ModeHeader>`
+Prominent banner at top of week view:
+- PREP MODE (amber): "🏆 Prep mode active · Posing daily · MA suspended · Cardio: Mon/Thu/Sat/Wed/Sun"
+- NORMAL MODE (muted): "📅 Normal schedule · MA: Wed & Sun · Cardio: Mon/Thu/Sat"
+Mode is computed from date — not toggleable by user.
+
 ### `<SemesterToggle>`
-Two pill buttons in the header: "Sem 1 · Sep–Oct" and "Sem 2 · Nov–Dec".
-- Active pill has accent border + tinted background
-- On switch: PATCH `/api/settings`, update local state, re-render the week with new blocks
-- Persist semester in `UserSettings` table
+Two pills: "Sem 1 · Sep–Oct" / "Sem 2 · Nov–Dec"
+- Changes uni blocks only — mode stays date-driven
+- Persists to DB via PATCH /api/settings
 
-### `<WeekGrid>`
-Seven `<DayRow>` components, one per day.
+### `<DayRow>` (one per day, collapsible)
+Header (always visible):
+- Day name + training badge:
+  - Mon/Thu: "UPPER 💪"
+  - Tue/Fri: "LOWER 💪"
+  - Wed (prep): "REST · Posing + Cardio"
+  - Wed (normal): "REST · MA 🥋"
+  - Sat: "UPPER 💪"
+  - Sun (prep): "REST · Posing + Cardio"
+  - Sun (normal): "REST · MA 🥋"
+- Completion bar for the day
+- Count of disabled blocks ("2 off")
+- Chevron
 
-### `<DayRow>`
-Collapsed by default. Shows:
-- Day name + lift type badge ("UPPER 💪" / "LOWER 💪" / "MARTIAL ARTS 🥋 REST")
-- Count of disabled blocks for this week e.g. "2 off"
-- Completion bar: done/total for this day based on DayLog entries
-- Chevron to expand
-
-Expanded shows all non-sleep blocks as toggleable rows:
-- Green dot → block is active this week
-- Grey dot + strikethrough → block is disabled this week
-- Tap to toggle (calls `POST /api/overrides`)
-- FIXED blocks show a "FIXED" badge in grey — tap does nothing, fixed blocks cannot be disabled
-- Block label + scheduled time shown on each row
+Expanded (block list):
+- Each non-sleep block as a toggleable row
+- Green dot = active, grey = disabled this week
+- Tap to toggle → POST /api/overrides
+- FIXED blocks: "FIXED" badge, not tappable
+- Show block label + scheduled start time
+- Study blocks show duration: "Study · 2h", "Study · 1.5h"
 
 ### Fixed block rule
-The following block kinds are always fixed and cannot be toggled off:
-- All `uni` blocks marked `fixed: true` in the schedule data
-- Specifically: practicals, tutorials, Lin. Algebra seminars, mandatory sessions
+Cannot disable: any block with `fixed: true` in the schedule data.
+This includes all mandatory uni sessions, practicals, and the 09:00 tutorials.
+Posing blocks can be disabled on specific days (user might have a reason).
 
-### Visual state
-- Today's day row has a subtle green left border
-- Days in the past this week show muted colours
-- Rest days (Wed/Sun) have a red tinted header
-
-## Semester switch behaviour
-When semester changes:
-- The week grid re-renders with the new semester's block set
-- Existing overrides for the current week are preserved but may not match any blocks in the new semester — ignore mismatches silently
-- The hero card on Today view also updates
+## Visual distinctions
+- Rest days (Wed/Sun): red-tinted day header
+- Prep mode days: amber dot next to posing block in the list
+- Today's row: green left border
+- Past days this week: muted text
 
 ## Done when
-- Switching semester persists after page refresh
-- Toggling a block off removes it from Today view's active count
+- Mode banner reflects actual current date (prep vs normal)
+- Semester toggle changes uni blocks only
+- Disabling a block removes it from Today view and progress count
 - FIXED blocks cannot be toggled
-- Today's completion bars are accurate based on actual DayLog entries
-- Expanding a day row shows all blocks with correct times
-- Rest days are visually distinct
+- Rest day headers clearly show what replaces MA in prep mode
+- Toggled state resets automatically next ISO week

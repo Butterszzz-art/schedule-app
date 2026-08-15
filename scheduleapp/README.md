@@ -60,11 +60,21 @@ node scripts/parse-timetable.mjs path/to/export.csv  # regenerate lib/schedule/u
 ## Architecture notes
 
 - **Schedule data lives in code, not the DB.** `lib/schedule/blocks.ts` holds
-  the fixed daily rhythm (sleep/gym/MA/cardio/meals) as a semester-keyed
-  template. Real university class sessions live separately in
-  `lib/schedule/uni.ts`, keyed by actual calendar date, because the real
-  UvA timetable is irregular week to week — a repeating template can't
-  represent it. `getBlocksForDate()` merges the two per day.
+  the fixed daily rhythm (sleep/gym/MA/cardio/posing/meals) as a
+  mode-and-semester-keyed template. Real university class sessions live
+  separately in `lib/schedule/uni.ts`, keyed by actual calendar date,
+  because the real UvA timetable is irregular week to week — a repeating
+  template can't represent it. `getBlocksForDate()` merges the two per day.
+- **Two schedule modes, derived from the date, never stored.**
+  `lib/schedule/mode.ts`'s `getScheduleMode(date)` returns `'prep'`
+  (Aug 16 – Nov 2, 2026: posing daily, MA suspended, cardio 5 days/week) or
+  `'normal'` (everything else: MA on Wed/Sun, no posing, cardio 3
+  days/week). `SCHEDULE` is `Record<ScheduleMode, Record<SemesterKey,
+  WeekSchedule>>`. Normal mode's exact block data isn't sourced from
+  anything (the reference prototype `schedule-app.jsx` never implemented
+  it — its own `SCHEDULE.normal` is a same-as-prep placeholder); it's this
+  codebase's own construction from CLAUDE.md's written rules, adjustable
+  in `lib/schedule/blocks.ts`.
 - **The DB only stores what changes**: `DayLog` (done/skipped), `WeekOverride`
   (per-week block toggles), `BlockAdjustment` (+15m pushes), `WeightEntry`,
   `PushSubscription`, `NotifiedBlock` (push dedup), `UserSettings` (semester).
