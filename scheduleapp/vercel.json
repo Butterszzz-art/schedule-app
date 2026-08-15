@@ -1,3 +1,0 @@
-{
-  "$comment": "No `crons` entry here on purpose: Vercel's own Cron Jobs are capped at once/day on the Hobby plan, but /api/cron/notify needs ~1-minute polling to catch each block's notification window (see lib/notify.ts). An external scheduler (e.g. cron-job.org, free) hits that endpoint every minute instead, authenticated with CRON_SECRET as a Bearer token. See README.md for setup."
-}

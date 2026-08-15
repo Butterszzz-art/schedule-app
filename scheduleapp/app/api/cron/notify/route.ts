@@ -7,11 +7,13 @@ import { getBlocksForDate } from "@/lib/schedule/blocks";
 import type { SemesterKey } from "@/lib/schedule/types";
 import { minutesSinceMidnight, todayISODate } from "@/lib/time";
 
-// Vercel Cron hits this every minute (see vercel.json). For every user,
-// finds blocks whose notification window we're currently inside and
-// sends a push -- unless we already have a NotifiedBlock row for that
-// exact (user, date, block), which the unique constraint enforces so
-// concurrent/duplicate ticks can't double-send.
+// An external scheduler (e.g. cron-job.org) hits this every minute --
+// see README.md's Deploying section for why this isn't a Vercel Cron
+// job. For every user, finds blocks whose notification window we're
+// currently inside and sends a push -- unless we already have a
+// NotifiedBlock row for that exact (user, date, block), which the
+// unique constraint enforces so concurrent/duplicate ticks can't
+// double-send.
 async function handle(request: Request) {
   if (!isAuthorizedCronRequest(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
