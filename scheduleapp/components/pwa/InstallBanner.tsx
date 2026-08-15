@@ -39,10 +39,10 @@ export function InstallBanner() {
   if (!detected || dismissed) return null;
 
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-accent/40 bg-accent/10 p-3">
+    <div className="flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3">
       <span className="text-lg leading-none">📲</span>
       <div className="min-w-0 flex-1 text-xs text-foreground/80">
-        <p className="font-medium">Install this app</p>
+        <p className="font-semibold">Install this app</p>
         <p className="mt-0.5 text-foreground/60">
           Tap the Share icon, then &ldquo;Add to Home Screen&rdquo; — needed for
           reminders to work on iPhone.
@@ -52,7 +52,7 @@ export function InstallBanner() {
         type="button"
         onClick={dismiss}
         aria-label="Dismiss"
-        className="shrink-0 text-foreground/40"
+        className="flex h-11 w-11 shrink-0 items-center justify-center text-foreground/40"
       >
         ✕
       </button>

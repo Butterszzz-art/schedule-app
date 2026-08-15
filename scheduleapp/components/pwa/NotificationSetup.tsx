@@ -83,7 +83,7 @@ export function NotificationSetup() {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-card-border bg-[#0E0E0E] p-4">
       <div className="min-w-0">
-        <p className="text-sm font-medium">Block reminders</p>
+        <p className="text-sm font-semibold">Block reminders</p>
         <p className="text-xs text-foreground/50">
           {denied
             ? "Blocked — enable notifications for this app in your browser/OS settings."
@@ -97,7 +97,7 @@ export function NotificationSetup() {
           type="button"
           onClick={enable}
           disabled={subscribing}
-          className="shrink-0 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-[#0A0A0A] disabled:opacity-50"
+          className="min-h-11 shrink-0 rounded-lg bg-accent px-4 text-xs font-semibold text-[#0A0A0A] disabled:opacity-50"
         >
           Enable
         </button>

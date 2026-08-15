@@ -17,7 +17,7 @@ export function ProgressBar({ blocks }: { blocks: TodayBlockView[] }) {
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-foreground/50">
+      <span className="text-xs tabular-nums text-foreground/50">
         {done} / {total} done · {pct}%
       </span>
     </div>

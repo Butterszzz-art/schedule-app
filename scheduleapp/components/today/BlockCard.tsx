@@ -39,7 +39,7 @@ export function BlockCard({
 
       <div className="min-w-0 flex-1">
         <p
-          className={`truncate text-sm font-medium ${
+          className={`truncate text-sm font-semibold ${
             isDone ? "text-foreground/40 line-through" : ""
           }`}
         >
@@ -52,12 +52,12 @@ export function BlockCard({
           OFF
         </span>
       ) : (
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
           {isCurrent && (
             <button
               type="button"
               onClick={onPush15}
-              className="rounded-md border px-2 py-1 text-[10px] font-semibold"
+              className="min-h-11 rounded-md border px-3 text-[10px] font-semibold"
               style={{ borderColor: colors.accent, color: colors.accent }}
             >
               +15m
@@ -73,7 +73,7 @@ export function BlockCard({
                   ? "skipped"
                   : "pending"
             }`}
-            className="flex h-7 w-7 items-center justify-center rounded-full border text-sm"
+            className="flex h-11 w-11 items-center justify-center rounded-full border text-base"
             style={{
               borderColor: isDone ? colors.accent : "#2A2A2A",
               color: isDone ? colors.accent : "#F0EDE8",

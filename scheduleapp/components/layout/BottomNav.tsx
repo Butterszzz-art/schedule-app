@@ -15,15 +15,18 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky bottom-0 z-10 flex justify-around border-t border-card-border bg-background/80 py-2 backdrop-blur-md">
+    <nav
+      className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[430px] -translate-x-1/2 justify-around border-t border-[#161616] bg-background/80 backdrop-blur-lg"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       {NAV_ITEMS.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex-1 py-2 text-center text-xs font-medium transition-colors ${
-              active ? "text-accent" : "text-foreground/50"
+            className={`flex min-h-11 flex-1 items-center justify-center text-xs font-semibold transition-colors ${
+              active ? "text-accent" : "text-[#333]"
             }`}
           >
             {item.label}

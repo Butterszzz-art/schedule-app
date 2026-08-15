@@ -48,7 +48,7 @@ export function HeroCard({
         {state.kind === "now" ? (
           <div className="flex items-center gap-2">
             <span
-              className="h-2 w-2 animate-pulse rounded-full"
+              className="h-2 w-2 animate-pulse-dot rounded-full"
               style={{ backgroundColor: colors.accent }}
             />
             <span
@@ -77,7 +77,7 @@ export function HeroCard({
             <button
               type="button"
               onClick={onPush15}
-              className="rounded-lg border px-3 py-1.5 text-xs font-semibold"
+              className="min-h-11 rounded-lg border px-4 text-xs font-semibold"
               style={{ borderColor: colors.accent, color: colors.accent }}
             >
               +15m

@@ -89,7 +89,7 @@ export function DayRow({
 
         <div className="flex shrink-0 items-center gap-3">
           <div className="flex flex-col items-end gap-1">
-            <span className="text-[11px] text-foreground/50">
+            <span className="text-[11px] tabular-nums text-foreground/50">
               {done}/{total}
             </span>
             <div className="h-1 w-16 overflow-hidden rounded-full bg-[#141414]">
@@ -120,7 +120,7 @@ export function DayRow({
                 type="button"
                 disabled={isFixed}
                 onClick={() => onToggleBlock(block.id, !isDisabled)}
-                className="flex items-center gap-3 rounded-lg px-2 py-2 text-left disabled:cursor-default"
+                className="flex min-h-11 items-center gap-3 rounded-lg px-2 text-left disabled:cursor-default"
               >
                 <span
                   className="h-2 w-2 shrink-0 rounded-full"

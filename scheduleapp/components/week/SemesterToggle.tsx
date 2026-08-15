@@ -21,7 +21,7 @@ export function SemesterToggle({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`min-h-11 rounded-full border px-3 text-xs font-semibold transition-colors ${
               active
                 ? "border-accent bg-accent/10 text-accent"
                 : "border-card-border text-foreground/50"

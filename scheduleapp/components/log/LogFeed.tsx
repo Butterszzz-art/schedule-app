@@ -39,7 +39,7 @@ export function LogFeed({ entries }: { entries: DayEntryData[] }) {
               key={f.key}
               type="button"
               onClick={() => setFilter(f.key)}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`flex min-h-11 shrink-0 items-center rounded-full border px-3 text-xs font-semibold transition-colors ${
                 active
                   ? "border-accent bg-accent/10 text-accent"
                   : "border-card-border text-foreground/50"

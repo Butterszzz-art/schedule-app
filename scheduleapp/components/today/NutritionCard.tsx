@@ -52,7 +52,7 @@ export function NutritionCard({
         </span>
         <Link
           href="/nutrition"
-          className="text-[10px] font-medium text-foreground/40"
+          className="text-[10px] font-semibold text-foreground/40"
         >
           Details ›
         </Link>
@@ -74,7 +74,7 @@ export function NutritionCard({
           {mealBlocks.map((meal, i) => (
             <span
               key={meal.id}
-              className="font-medium"
+              className="font-semibold"
               style={{
                 color: meal.id === nextMealId ? "#C8F060" : "#F0EDE8AA",
               }}

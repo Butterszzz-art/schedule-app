@@ -87,13 +87,13 @@ export function WeightTracker({
           placeholder="kg"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="w-24 rounded-lg border border-card-border bg-[#141414] px-3 py-2 text-sm outline-none focus:border-accent"
+          className="min-h-11 w-24 rounded-lg border border-card-border bg-[#141414] px-3 text-sm outline-none focus:border-accent"
         />
         <button
           type="button"
           onClick={logWeight}
           disabled={isSaving || input === ""}
-          className="flex-1 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-[#0A0A0A] disabled:opacity-50"
+          className="min-h-11 flex-1 rounded-lg bg-accent px-3 text-sm font-semibold text-[#0A0A0A] disabled:opacity-50"
         >
           Log weight
         </button>
@@ -103,7 +103,7 @@ export function WeightTracker({
       {variance && (
         <p className="text-xs">
           <span
-            className="font-semibold"
+            className="font-semibold tabular-nums"
             style={{ color: variance.aheadOfSchedule ? "#4ADE80" : "#F87171" }}
           >
             {variance.diff > 0 ? "+" : ""}
@@ -123,7 +123,7 @@ export function WeightTracker({
               className="flex justify-between text-xs text-foreground/50"
             >
               <span>{formatShort(e.date)}</span>
-              <span className="font-medium text-foreground/70">{e.weight}kg</span>
+              <span className="font-semibold tabular-nums text-foreground/70">{e.weight}kg</span>
             </div>
           ))}
         </div>

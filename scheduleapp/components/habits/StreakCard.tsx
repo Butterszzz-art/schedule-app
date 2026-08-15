@@ -37,7 +37,7 @@ export function StreakCard({
       style={{ borderColor, boxShadow }}
     >
       <span className="text-2xl leading-none">{category.icon}</span>
-      <span className="text-xs font-medium text-foreground/60">
+      <span className="text-xs font-semibold text-foreground/60">
         {category.label}
       </span>
       <div className="flex items-baseline gap-1.5">

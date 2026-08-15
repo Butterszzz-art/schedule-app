@@ -57,7 +57,7 @@ export function PrepHeader({
       </div>
 
       <p className="text-center text-xs text-foreground/50">
-        <span className="font-semibold text-foreground/80">
+        <span className="font-semibold tabular-nums text-foreground/80">
           {Math.max(0, days)} days
         </span>{" "}
         until {show.name}

@@ -34,7 +34,7 @@ export function HeatmapSection({
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold text-foreground/70">Last 7 days</h2>
+      <h2 className="section-label">Last 7 days</h2>
       <div className="flex flex-col gap-2.5">
         {HABIT_CATEGORIES.map((cat) => {
           const cells = heatmapForCategory(logsByDate, semester, cat, today);

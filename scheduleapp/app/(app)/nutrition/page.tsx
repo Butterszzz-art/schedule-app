@@ -16,12 +16,12 @@ export default function NutritionPage() {
           <table className="w-full min-w-[420px] text-left text-sm">
             <thead>
               <tr className="border-b border-card-border text-xs text-foreground/50">
-                <th className="px-3 py-2 font-medium">Day type</th>
-                <th className="px-3 py-2 font-medium">Trigger</th>
-                <th className="px-3 py-2 font-medium">kcal</th>
-                <th className="px-3 py-2 font-medium">Protein</th>
-                <th className="px-3 py-2 font-medium">Carbs</th>
-                <th className="px-3 py-2 font-medium">Fat</th>
+                <th className="px-3 py-2 font-semibold">Day type</th>
+                <th className="px-3 py-2 font-semibold">Trigger</th>
+                <th className="px-3 py-2 font-semibold">kcal</th>
+                <th className="px-3 py-2 font-semibold">Protein</th>
+                <th className="px-3 py-2 font-semibold">Carbs</th>
+                <th className="px-3 py-2 font-semibold">Fat</th>
               </tr>
             </thead>
             <tbody>
@@ -29,7 +29,7 @@ export default function NutritionPage() {
                 const t = NUTRITION_TARGETS[key];
                 return (
                   <tr key={key} className="border-b border-card-border/60 last:border-0">
-                    <td className="px-3 py-2.5 font-medium">{t.label}</td>
+                    <td className="px-3 py-2.5 font-semibold">{t.label}</td>
                     <td className="px-3 py-2.5 text-foreground/60">{trigger}</td>
                     <td className="px-3 py-2.5">{t.calories}</td>
                     <td className="px-3 py-2.5" style={{ color: "#4ADE80" }}>
