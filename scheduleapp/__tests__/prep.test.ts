@@ -11,13 +11,21 @@ import {
 describe("getCurrentPhase", () => {
   it("identifies each phase from a date within it", () => {
     expect(getCurrentPhase("2026-06-15")?.name).toBe("Base Cut");
-    expect(getCurrentPhase("2026-07-30")?.name).toBe("Vacation");
-    expect(getCurrentPhase("2026-08-15")?.name).toBe("Real Prep");
+    expect(getCurrentPhase("2026-08-15")?.name).toBe("Vacation"); // real dates: Aug 9-19
     expect(getCurrentPhase("2026-09-20")?.name).toBe("Final Push");
   });
 
   it("treats a phase boundary date as the start of the next phase", () => {
-    expect(getCurrentPhase("2026-07-25")?.name).toBe("Vacation");
+    expect(getCurrentPhase("2026-08-19")?.name).toBe("Real Prep");
+  });
+
+  // Base Cut ends Jul 25 and Real Prep still starts Aug 4 (the v4 PDF's
+  // original, uncorrected dates) even though real Vacation is Aug 9-19 --
+  // left as a known gap at the user's request (2026-08-17) pending real
+  // Real Prep/Final Push boundaries, rather than guessing a compressed
+  // schedule. Vacation still wins Aug 9-19 since it's checked first.
+  it("has a known gap between Base Cut ending and Real Prep's stale start date", () => {
+    expect(getCurrentPhase("2026-07-30")).toBeNull();
   });
 
   it("includes the show date itself in the last phase", () => {

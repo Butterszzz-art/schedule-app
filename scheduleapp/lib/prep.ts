@@ -8,9 +8,16 @@ export interface PrepPhase {
   color: string;
 }
 
+// NOTE: Vacation actually ran Aug 9-19, not Jul 25-Aug 4 as the v4 PDF
+// blueprint states (per user correction, 2026-08-17) -- that PDF is stale
+// on this one point. Base Cut's end and Real Prep's start are still the
+// PDF's original Jul 25 / Aug 4, left as-is at the user's request (real
+// boundaries pending) -- Real Prep's range currently overlaps Vacation's;
+// getCurrentPhase() below returns the first array match, so Vacation
+// still wins for Aug 9-19 since it's listed first.
 export const PREP_PHASES: PrepPhase[] = [
   { name: "Base Cut", start: "2026-06-01", end: "2026-07-25", color: "#4ADE80" },
-  { name: "Vacation", start: "2026-07-25", end: "2026-08-04", color: "#60A5FA" },
+  { name: "Vacation", start: "2026-08-09", end: "2026-08-19", color: "#60A5FA" },
   { name: "Real Prep", start: "2026-08-04", end: "2026-09-05", color: "#FB923C" },
   { name: "Final Push", start: "2026-09-05", end: "2026-10-17", color: "#F87171" },
 ];
@@ -54,9 +61,9 @@ export const WEIGHT_TARGETS: WeightTarget[] = [
   { date: "2026-07-13", target: 81.5 },
   { date: "2026-07-20", target: 80.7 },
   { date: "2026-07-25", target: 80.0 }, // depart
-  { date: "2026-08-04", target: 81.0 }, // return
   { date: "2026-08-11", target: 80.0 },
   { date: "2026-08-18", target: 79.2 },
+  { date: "2026-08-19", target: 81.0 }, // return (corrected from Aug 4 -- see PREP_PHASES note)
   { date: "2026-08-25", target: 78.5 },
   { date: "2026-09-01", target: 77.8 },
   { date: "2026-09-08", target: 77.0 },
