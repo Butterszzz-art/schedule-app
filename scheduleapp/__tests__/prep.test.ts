@@ -16,16 +16,12 @@ describe("getCurrentPhase", () => {
   });
 
   it("treats a phase boundary date as the start of the next phase", () => {
+    expect(getCurrentPhase("2026-08-09")?.name).toBe("Vacation");
     expect(getCurrentPhase("2026-08-19")?.name).toBe("Real Prep");
   });
 
-  // Base Cut ends Jul 25 and Real Prep still starts Aug 4 (the v4 PDF's
-  // original, uncorrected dates) even though real Vacation is Aug 9-19 --
-  // left as a known gap at the user's request (2026-08-17) pending real
-  // Real Prep/Final Push boundaries, rather than guessing a compressed
-  // schedule. Vacation still wins Aug 9-19 since it's checked first.
-  it("has a known gap between Base Cut ending and Real Prep's stale start date", () => {
-    expect(getCurrentPhase("2026-07-30")).toBeNull();
+  it("has no gap now Base Cut extends through Vacation's real start date", () => {
+    expect(getCurrentPhase("2026-07-30")?.name).toBe("Base Cut");
   });
 
   it("includes the show date itself in the last phase", () => {
@@ -73,11 +69,12 @@ describe("daysUntil / weeksOut", () => {
 
 describe("currentWeightTarget", () => {
   it("returns the nearest upcoming checkpoint", () => {
-    expect(currentWeightTarget("2026-08-12").date).toBe("2026-08-18");
+    // No checkpoints fall inside Vacation (Aug 9-19) -- next one is "return".
+    expect(currentWeightTarget("2026-08-12").date).toBe("2026-08-19");
   });
 
   it("returns today's checkpoint when today is exactly a checkpoint date", () => {
-    expect(currentWeightTarget("2026-08-18").date).toBe("2026-08-18");
+    expect(currentWeightTarget("2026-08-19").date).toBe("2026-08-19");
   });
 
   it("falls back to the last checkpoint once prep is over", () => {

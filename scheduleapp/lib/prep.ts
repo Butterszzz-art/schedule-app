@@ -8,17 +8,17 @@ export interface PrepPhase {
   color: string;
 }
 
-// NOTE: Vacation actually ran Aug 9-19, not Jul 25-Aug 4 as the v4 PDF
-// blueprint states (per user correction, 2026-08-17) -- that PDF is stale
-// on this one point. Base Cut's end and Real Prep's start are still the
-// PDF's original Jul 25 / Aug 4, left as-is at the user's request (real
-// boundaries pending) -- Real Prep's range currently overlaps Vacation's;
-// getCurrentPhase() below returns the first array match, so Vacation
-// still wins for Aug 9-19 since it's listed first.
+// NOTE: real dates differ from the v4 PDF blueprint (prep-blueprint-v4.pdf),
+// which says Vacation was Jul 25-Aug 4 -- per user correction (2026-08-17),
+// Vacation actually ran Aug 9-19. Base Cut and Real Prep shifted to match
+// (Base Cut extends to Aug 9; Real Prep starts Aug 19 and keeps Final
+// Push's original 6-week length, so Real Prep is now just 17 days instead
+// of 4.5 weeks -- Final Push still starts Sep 5 and ends the fixed Oct 17
+// show date unchanged).
 export const PREP_PHASES: PrepPhase[] = [
-  { name: "Base Cut", start: "2026-06-01", end: "2026-07-25", color: "#4ADE80" },
+  { name: "Base Cut", start: "2026-06-01", end: "2026-08-09", color: "#4ADE80" },
   { name: "Vacation", start: "2026-08-09", end: "2026-08-19", color: "#60A5FA" },
-  { name: "Real Prep", start: "2026-08-04", end: "2026-09-05", color: "#FB923C" },
+  { name: "Real Prep", start: "2026-08-19", end: "2026-09-05", color: "#FB923C" },
   { name: "Final Push", start: "2026-09-05", end: "2026-10-17", color: "#F87171" },
 ];
 
@@ -60,10 +60,13 @@ export const WEIGHT_TARGETS: WeightTarget[] = [
   { date: "2026-07-06", target: 82.2 },
   { date: "2026-07-13", target: 81.5 },
   { date: "2026-07-20", target: 80.7 },
-  { date: "2026-07-25", target: 80.0 }, // depart
-  { date: "2026-08-11", target: 80.0 },
-  { date: "2026-08-18", target: 79.2 },
-  { date: "2026-08-19", target: 81.0 }, // return (corrected from Aug 4 -- see PREP_PHASES note)
+  // "Depart" moved Jul 25 -> Aug 9 to match Base Cut's corrected end date
+  // (goal: arrive at vacation at or below 80kg). The PDF's Aug 11/Aug 18
+  // checkpoints are dropped -- both now fall inside Vacation (Aug 9-19),
+  // which per the blueprint isn't a tracked-deficit phase ("eat clean at
+  // maintenance, don't track obsessively").
+  { date: "2026-08-09", target: 80.0 }, // depart
+  { date: "2026-08-19", target: 81.0 }, // return
   { date: "2026-08-25", target: 78.5 },
   { date: "2026-09-01", target: 77.8 },
   { date: "2026-09-08", target: 77.0 },
