@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/habits", label: "Habits" },
   { href: "/log", label: "Log" },
   { href: "/prep", label: "Prep" },
+  { href: "/tasks", label: "Tasks" },
 ] as const;
 
 export function BottomNav() {

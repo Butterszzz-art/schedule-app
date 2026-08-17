@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "scheduleapp", "run", "dev", "--", "-p", "3100"],
       "port": 3100
+    },
+    {
+      "name": "checklistapp",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../checklistapp", "run", "dev", "--", "-p", "3200"],
+      "port": 3200
     }
   ]
 }

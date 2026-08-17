@@ -11,13 +11,15 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  password      String
-  createdAt     DateTime       @default(now())
-  logs          DayLog[]
-  weekOverrides WeekOverride[]
-  settings      UserSettings?
+  id              String           @id @default(cuid())
+  email           String           @unique
+  password        String
+  createdAt       DateTime         @default(now())
+  logs            DayLog[]
+  weekOverrides   WeekOverride[]
+  settings        UserSettings?
+  tasks           Task[]
+  taskCompletions TaskCompletion[]
 }
 
 model UserSettings {
@@ -101,4 +103,39 @@ model NotifiedBlock {
   createdAt DateTime @default(now())
 
   @@unique([userId, date, blockId])
+}
+
+// ── Tasks tab: weekly planner + daily checklist ──────────────────────────
+// School / Content / Websites / Personal task tracking, separate from the
+// schedule blocks above. A Task belongs to one (weekKey, dayKey, category)
+// slot; completion is tracked per calendar date via TaskCompletion, so
+// toggling done/undone is just create/delete on that join row.
+model Task {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  weekKey     String // ISO week: "2026-W38"
+  dayKey      String // "Mon" | "Tue" | ... | "Sun"
+  category    String // "school" | "content" | "websites" | "personal"
+  text        String
+  order       Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  completions TaskCompletion[]
+
+  @@index([userId, weekKey, dayKey])
+  @@index([userId, weekKey])
+}
+
+model TaskCompletion {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  date        String // ISO date: "2026-09-01"
+  completedAt DateTime @default(now())
+
+  @@unique([taskId, date])
+  @@index([userId, date])
 }
