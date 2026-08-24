@@ -76,11 +76,14 @@ Key differences from normal:
 8. **Lectures before 13:00 are skipped** — only attend mandatory sessions and anything starting ≥ 13:00
 
 ## Nutrition targets
+Per prep-blueprint-v5.html (2026-08-24 correction — true maintenance was
+2700kcal, corrected to 2900kcal; collapses the old heavy/moderate lift
+split into a flat training/rest split):
+
 | Day type | Trigger | Calories | Protein | Carbs | Fat |
 |----------|---------|----------|---------|-------|-----|
-| Heavy lift | Upper body (Mon/Thu/Sat) | 2500 | 164g | 335g | 55g |
-| Moderate lift | Lower body (Tue/Fri) | 2200 | 164g | 251g | 60g |
-| True rest | Wed/Sun (MA or no training) | 1700 | 164g | 104g | 70g |
+| Training | Lift day (Mon/Tue/Thu/Fri/Sat) | 2400 | 164g | 246g | 69g |
+| Rest | Nothing (Wed/Sun) | 2240 | 164g | 196g | 89g |
 
 ## Schedule mode detection in code
 ```typescript
@@ -98,7 +101,7 @@ All schedule-related functions must accept a `mode` parameter and return the cor
 ## Competition timeline
 - Show 1: Oct 17, 2026 — NPC Spain Naturals, Aranjuez (live rehearsal)
 - Show 2: Oct 30 – Nov 1, 2026 — Euronaturals Pro Qualifier, Madrid (9 IFBB Pro Cards)
-- Stage target: ~75kg at 4–6% body fat
+- Stage target: ~77kg at 4–6% body fat (revised from ~75kg per prep-blueprint-v5.html — abs, not scale weight, are the limiting factor at this point)
 - Start weight: 86kg (Jun 1, 2026)
 - Prep phases: Base Cut → Vacation (Aruba) → Real Prep → Final Push
 

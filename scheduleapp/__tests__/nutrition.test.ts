@@ -4,12 +4,12 @@ import type { DayKey } from "@/lib/schedule/types";
 
 describe("getDayType", () => {
   const cases: [DayKey, string][] = [
-    ["Mon", "heavy_lift"],
-    ["Tue", "moderate_lift"],
+    ["Mon", "training"],
+    ["Tue", "training"],
     ["Wed", "rest"],
-    ["Thu", "heavy_lift"],
-    ["Fri", "moderate_lift"],
-    ["Sat", "heavy_lift"],
+    ["Thu", "training"],
+    ["Fri", "training"],
+    ["Sat", "training"],
     ["Sun", "rest"],
   ];
 
@@ -26,21 +26,16 @@ describe("NUTRITION_TARGETS", () => {
     }
   });
 
-  it("matches the CLAUDE.md blueprint numbers", () => {
-    expect(NUTRITION_TARGETS.heavy_lift).toMatchObject({
-      calories: 2500,
-      carbs: 335,
-      fat: 55,
-    });
-    expect(NUTRITION_TARGETS.moderate_lift).toMatchObject({
-      calories: 2200,
-      carbs: 251,
-      fat: 60,
+  it("matches the v5 blueprint numbers (prep-blueprint-v5.html)", () => {
+    expect(NUTRITION_TARGETS.training).toMatchObject({
+      calories: 2400,
+      carbs: 246,
+      fat: 69,
     });
     expect(NUTRITION_TARGETS.rest).toMatchObject({
-      calories: 1700,
-      carbs: 104,
-      fat: 70,
+      calories: 2240,
+      carbs: 196,
+      fat: 89,
     });
   });
 });

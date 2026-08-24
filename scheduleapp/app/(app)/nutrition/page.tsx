@@ -2,9 +2,8 @@ import { NUTRITION_TARGETS, WEEKLY_AVERAGE_CALORIES } from "@/lib/nutrition";
 import { Header } from "@/components/layout/Header";
 
 const ROWS: { key: keyof typeof NUTRITION_TARGETS; trigger: string }[] = [
-  { key: "heavy_lift", trigger: "Upper body (Mon/Thu/Sat)" },
-  { key: "moderate_lift", trigger: "Lower body (Tue/Fri)" },
-  { key: "rest", trigger: "MA days + rest (Wed/Sun)" },
+  { key: "training", trigger: "Lift day (Mon/Tue/Thu/Fri/Sat)" },
+  { key: "rest", trigger: "Nothing (Wed/Sun)" },
 ];
 
 export default function NutritionPage() {

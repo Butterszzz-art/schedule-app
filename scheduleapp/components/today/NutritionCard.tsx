@@ -4,9 +4,8 @@ import type { TodayBlockView } from "@/lib/schedule/types";
 import { formatHM } from "@/lib/time";
 
 const CARB_COLOR: Record<NutritionDayType, string> = {
-  heavy_lift: "#4ADE80",
-  moderate_lift: "#FBBF24",
-  rest: "#F87171",
+  training: "#4ADE80",
+  rest: "#FBBF24",
 };
 
 function MacroPill({

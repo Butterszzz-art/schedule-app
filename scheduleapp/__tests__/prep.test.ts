@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  CUT_STOP_SIGNALS,
   currentWeightTarget,
   daysUntil,
   getCurrentPhase,
   nextShow,
+  TARGET_WEIGHT,
   weeksOut,
   weightVariance,
 } from "@/lib/prep";
@@ -79,6 +81,27 @@ describe("currentWeightTarget", () => {
 
   it("falls back to the last checkpoint once prep is over", () => {
     expect(currentWeightTarget("2026-11-01").date).toBe("2026-10-17");
+  });
+});
+
+describe("v5 blueprint revisions (prep-blueprint-v5.html, 2026-08-24)", () => {
+  it("revises the stage target from 75kg to 77kg", () => {
+    expect(TARGET_WEIGHT).toBe(77);
+  });
+
+  it("re-anchors the weekly checkpoints on the real Aug 24 baseline", () => {
+    expect(currentWeightTarget("2026-08-24")).toMatchObject({
+      date: "2026-08-24",
+      target: 80.7,
+    });
+    expect(currentWeightTarget("2026-10-17")).toMatchObject({
+      date: "2026-10-17",
+      target: 77.0,
+    });
+  });
+
+  it("includes the six stop-cutting signals", () => {
+    expect(CUT_STOP_SIGNALS).toHaveLength(6);
   });
 });
 

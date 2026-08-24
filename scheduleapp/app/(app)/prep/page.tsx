@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { currentWeightTarget, getCurrentPhase, SHOWS } from "@/lib/prep";
 import { todayISODate } from "@/lib/time";
 import { Header } from "@/components/layout/Header";
+import { BlueprintNotes } from "@/components/prep/BlueprintNotes";
+import { CutSignals } from "@/components/prep/CutSignals";
 import { PhaseTimeline } from "@/components/prep/PhaseTimeline";
 import { PrepHeader } from "@/components/prep/PrepHeader";
 import { PriorityGaps } from "@/components/prep/PriorityGaps";
@@ -48,6 +50,8 @@ export default async function PrepPage() {
           ))}
         </div>
         <PriorityGaps />
+        <CutSignals />
+        <BlueprintNotes />
       </main>
     </>
   );
