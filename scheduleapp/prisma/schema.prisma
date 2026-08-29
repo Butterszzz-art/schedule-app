@@ -23,11 +23,14 @@ model User {
 }
 
 model UserSettings {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-  semester  Int      @default(1) // 1 or 2
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  semester      Int      @default(1) // 1 or 2
+  // Authenticates the public iCal feed URL (/api/calendar/[token].ics)
+  // without requiring login -- treat it like an API key.
+  calendarToken String   @unique @default(cuid())
+  updatedAt     DateTime @updatedAt
 }
 
 // A single logged block for a specific date
