@@ -8,18 +8,20 @@
 // cardio only 3 days/week. Mode is derived from the date, never stored --
 // see getScheduleMode() in mode.ts and getBlocksForDate() below.
 //
-// PREP mode's block data (times, structure, IDs-worth-of-detail) is
-// ported directly from the reference prototype (schedule-app.jsx), which
-// is the source of truth for it. NORMAL mode has no equivalent reference
-// -- schedule-app.jsx's own SCHEDULE.normal is a placeholder duplicate of
-// prep ("simplified: same for now") -- so it's constructed here from
-// CLAUDE.md's written NORMAL MODE rules plus the same meal/study/reading
-// rhythm conventions PREP mode uses. Where CLAUDE.md's "shared" chore/meal
-// -prep anchor times (e.g. "Sun chores 07:30") don't fit NORMAL mode's
-// later morning (MA doesn't end until 08:15, vs PREP's posing+cardio
-// finishing by 07:25), times were shifted later to avoid overlaps -- the
-// activity order and durations follow the spec; the exact clock times
-// past that are a reasonable best-effort, easy to adjust in Week view.
+// PREP mode's block structure originally came from the reference prototype
+// (schedule-app.jsx); its clock times were retimed 2026-08-30 (see the PREP
+// mode section below -- wake 06:30, sleep 22:30). NORMAL mode has no
+// equivalent reference or update -- schedule-app.jsx's own SCHEDULE.normal
+// is a placeholder duplicate of prep ("simplified: same for now") -- so
+// it's constructed here from CLAUDE.md's written NORMAL MODE rules plus the
+// same meal/study/reading rhythm conventions PREP mode uses, still on the
+// original 05:30 wake / 21:45 sleep times (the 2026-08-30 retiming was
+// PREP-only -- CLAUDE.md's NORMAL MODE rules weren't touched). Where
+// CLAUDE.md's "shared" chore/meal-prep anchor times (e.g. "Sun chores
+// 07:30") don't fit NORMAL mode's later morning (MA doesn't end until
+// 08:15), times were shifted later to avoid overlaps -- the activity order
+// and durations follow the spec; the exact clock times past that are a
+// reasonable best-effort, easy to adjust in Week view.
 //
 // This intentionally does NOT bake in university class times, in either
 // mode: the real UvA timetable is irregular week to week (different
@@ -58,10 +60,19 @@ function id(mode: ScheduleMode, semester: SemesterKey, day: DayKey, kind: string
 }
 
 // ── PREP mode ────────────────────────────────────────────────────────────
-// Ported from schedule-app.jsx's mkGymDay/PREP. Sleep is modelled as two
-// blocks per day (overnight tail 00:00-05:30, then bedtime 21:45-05:30
-// next day) so "still asleep" reads correctly before wake -- both get
-// filtered out of every view the same way a single sleep block was.
+// Retimed per the 2026-08-30 schedule update (weekly_schedule_final.pdf +
+// scheduleapp-prompts/CLAUDE.md's "CORRECTED TIMING RULES", which
+// supersede the original schedule-app.jsx-ported times below). Wake moved
+// 05:30 -> 06:30 and sleep 21:45 -> 22:30 (still a full 8h). Sleep is
+// modelled as two blocks per day (overnight tail 00:00-06:30, then bedtime
+// 22:30-06:30 next day) so "still asleep" reads correctly before wake --
+// both get filtered out of every view the same way a single sleep block
+// was. Daily content blocks (Instagram/YouTube/Websites) were added in the
+// same update -- see the `content` block kind.
+//
+// Exact clock times beyond the update's explicitly-stated anchors (wake,
+// M1, gym, cardio, content slots) are this file's own best-effort fill-in
+// to keep every day flush with no dead gaps -- easy to adjust in Week view.
 
 function prepGymDay(
   semester: SemesterKey,
@@ -70,109 +81,103 @@ function prepGymDay(
   extras: ScheduleBlock[]
 ): ScheduleBlock[] {
   const bid = (k: string) => id("prep", semester, day, k);
+  const tueOrThu = day === "Tue" || day === "Thu";
   return [
-    { id: bid("sleep-am"), kind: "sleep", label: "Sleep", start: 0, dur: 330, fixed: true },
-    { id: bid("posing"), kind: "posing", label: "Posing", start: 5.5, dur: 25 },
-    { id: bid("meal-m1"), kind: "meal", label: "M1", start: 5.92, dur: 20 },
-    { id: bid("gym"), kind: "gym", label: gymLabel, start: 6, dur: 90, fixed: true },
-    { id: bid("mobility"), kind: "mobility", label: "Mobility", start: 7.5, dur: 20 },
-    { id: bid("commute-home"), kind: "commute", label: "→ Home", start: 7.83, dur: 20 },
-    { id: bid("meal-m2"), kind: "meal", label: "M2", start: 8.17, dur: 30 },
-    { id: bid("study-1"), kind: "study", label: "Study · 2h", start: 8.67, dur: 120 },
-    { id: bid("meal-break"), kind: "meal", label: "break", start: 10.67, dur: 20 },
-    { id: bid("study-2"), kind: "study", label: "Study · 1.5h", start: 11, dur: 90 },
-    { id: bid("meal-m3"), kind: "meal", label: "M3", start: 12.5, dur: 30 },
+    { id: bid("sleep-am"), kind: "sleep", label: "Sleep", start: 0, dur: 390, fixed: true },
+    { id: bid("posing"), kind: "posing", label: "Posing", start: 6.5, dur: 20 },
+    { id: bid("meal-m1"), kind: "meal", label: "M1", start: 6.833, dur: 20 },
+    { id: bid("commute-gym"), kind: "commute", label: "→ Gym", start: 7.167, dur: 20 },
+    { id: bid("gym"), kind: "gym", label: gymLabel, start: 7.5, dur: 90, fixed: true },
+    { id: bid("mobility"), kind: "mobility", label: "Mobility", start: 9, dur: 20 },
+    { id: bid("commute-home"), kind: "commute", label: "→ Home", start: 9.333, dur: 20 },
+    { id: bid("meal-m2"), kind: "meal", label: "M2", start: 9.667, dur: 20 },
+    { id: bid("study-1"), kind: "study", label: "Study · 2h", start: 10, dur: 120 },
+    { id: bid("meal-break"), kind: "meal", label: "break", start: 12, dur: 20 },
+    { id: bid("study-2"), kind: "study", label: "Study · 1.5h", start: 12.333, dur: 90 },
+    { id: bid("meal-m3"), kind: "meal", label: "M3", start: 13.833, dur: 30 },
     ...extras,
-    { id: bid("meal-m5"), kind: "meal", label: "M5", start: 19.5, dur: 40 },
+    { id: bid("meal-m5"), kind: "meal", label: "M5", start: 19.333, dur: 40 },
+    { id: bid("content-ig"), kind: "content", label: "IG post", start: 20, dur: 10 },
+    ...(tueOrThu
+      ? [
+          {
+            id: bid("content-web"),
+            kind: "content" as const,
+            label: "Websites",
+            start: 20.25,
+            dur: 45,
+          },
+        ]
+      : []),
     { id: bid("read"), kind: "read", label: "Reading", start: 21, dur: 30 },
-    { id: bid("sleep-pm"), kind: "sleep", label: "Sleep", start: 21.75, dur: 480, fixed: true },
+    { id: bid("sleep-pm"), kind: "sleep", label: "Sleep", start: 22.5, dur: 480, fixed: true },
   ];
 }
 
 function buildPrepWeek(semester: SemesterKey): WeekSchedule {
   const bidWed = (k: string) => id("prep", semester, "Wed", k);
-  const bidSat = (k: string) => id("prep", semester, "Sat", k);
   const bidSun = (k: string) => id("prep", semester, "Sun", k);
 
   return {
     Mon: prepGymDay(semester, "Mon", "Upper body", [
-      { id: id("prep", semester, "Mon", "commute-sp"), kind: "commute", label: "→ SP", start: 12.5, dur: 25 },
       { id: id("prep", semester, "Mon", "meal-m4"), kind: "meal", label: "M4", start: 15.5, dur: 30 },
       { id: id("prep", semester, "Mon", "cardio"), kind: "cardio", label: "Cardio", start: 17.5, dur: 30, fixed: true },
-      { id: id("prep", semester, "Mon", "commute-home2"), kind: "commute", label: "→ Home", start: 18, dur: 20 },
     ]),
     Tue: prepGymDay(semester, "Tue", "Lower body", [
-      { id: id("prep", semester, "Tue", "commute-sp"), kind: "commute", label: "→ SP", start: 12.5, dur: 25 },
       { id: id("prep", semester, "Tue", "meal-m4"), kind: "meal", label: "M4", start: 15.5, dur: 30 },
-      { id: id("prep", semester, "Tue", "commute-home2"), kind: "commute", label: "→ Home", start: 17, dur: 20 },
       // NO cardio -- lower body day.
     ]),
     Wed: [
-      { id: bidWed("sleep-am"), kind: "sleep", label: "Sleep", start: 0, dur: 330, fixed: true },
-      { id: bidWed("posing"), kind: "posing", label: "Posing", start: 5.5, dur: 25 },
-      { id: bidWed("meal-m1"), kind: "meal", label: "M1", start: 5.92, dur: 20 },
-      { id: bidWed("cardio"), kind: "cardio", label: "Cardio", start: 6.5, dur: 30, fixed: true },
-      { id: bidWed("meal-m2"), kind: "meal", label: "M2", start: 7.0, dur: 25 },
-      { id: bidWed("study-1"), kind: "study", label: "Study · 2h", start: 7.5, dur: 120 },
-      { id: bidWed("meal-break1"), kind: "meal", label: "break", start: 9.5, dur: 20 },
-      { id: bidWed("study-2"), kind: "study", label: "Study · 1.5h", start: 9.83, dur: 90 },
-      { id: bidWed("meal-break2"), kind: "meal", label: "break", start: 11.33, dur: 20 },
-      { id: bidWed("study-3"), kind: "study", label: "Study · 1h", start: 11.67, dur: 60 },
-      { id: bidWed("meal-m3"), kind: "meal", label: "M3", start: 12.67, dur: 30 },
+      { id: bidWed("sleep-am"), kind: "sleep", label: "Sleep", start: 0, dur: 390, fixed: true },
+      { id: bidWed("posing"), kind: "posing", label: "Posing", start: 6.5, dur: 20 },
+      { id: bidWed("meal-m1"), kind: "meal", label: "M1", start: 6.833, dur: 10 },
+      { id: bidWed("cardio"), kind: "cardio", label: "Cardio", start: 7, dur: 30, fixed: true },
+      { id: bidWed("meal-m2"), kind: "meal", label: "M2", start: 7.5, dur: 20 },
+      { id: bidWed("study-1"), kind: "study", label: "Study · 2h", start: 7.833, dur: 120 },
+      { id: bidWed("meal-break1"), kind: "meal", label: "break", start: 9.833, dur: 20 },
+      { id: bidWed("study-2"), kind: "study", label: "Study · 1.5h", start: 10.167, dur: 90 },
+      { id: bidWed("meal-break2"), kind: "meal", label: "break", start: 11.667, dur: 20 },
+      { id: bidWed("study-3"), kind: "study", label: "Study · 1h", start: 12, dur: 60 },
+      { id: bidWed("meal-m3"), kind: "meal", label: "M3", start: 13, dur: 30 },
       { id: bidWed("meal-m4"), kind: "meal", label: "M4", start: 15.5, dur: 30 },
       { id: bidWed("chores"), kind: "chores", label: "Chores", start: 16, dur: 60 },
       { id: bidWed("mealprep"), kind: "prep", label: "Mini Prep", start: 17, dur: 60 },
-      { id: bidWed("meal-m5"), kind: "meal", label: "M5", start: 19.5, dur: 40 },
+      { id: bidWed("meal-m5"), kind: "meal", label: "M5", start: 19.333, dur: 40 },
+      { id: bidWed("content-ig"), kind: "content", label: "IG post", start: 20, dur: 10 },
       { id: bidWed("read"), kind: "read", label: "Reading", start: 21, dur: 30 },
-      { id: bidWed("sleep-pm"), kind: "sleep", label: "Sleep", start: 21.75, dur: 480, fixed: true },
+      { id: bidWed("sleep-pm"), kind: "sleep", label: "Sleep", start: 22.5, dur: 480, fixed: true },
     ],
     Thu: prepGymDay(semester, "Thu", "Upper body", [
-      { id: id("prep", semester, "Thu", "cardio"), kind: "cardio", label: "Cardio", start: 13, dur: 30, fixed: true },
-      { id: id("prep", semester, "Thu", "commute-sp"), kind: "commute", label: "→ SP", start: 13.5, dur: 20 },
+      { id: id("prep", semester, "Thu", "cardio"), kind: "cardio", label: "Cardio", start: 14.333, dur: 30, fixed: true },
       { id: id("prep", semester, "Thu", "meal-m4"), kind: "meal", label: "M4", start: 15.5, dur: 30 },
-      { id: id("prep", semester, "Thu", "commute-home2"), kind: "commute", label: "→ Home", start: 17, dur: 20 },
     ]),
     Fri: prepGymDay(semester, "Fri", "Lower body", [
-      { id: id("prep", semester, "Fri", "commute-sp"), kind: "commute", label: "→ SP", start: 12.5, dur: 25 },
       { id: id("prep", semester, "Fri", "meal-m4"), kind: "meal", label: "M4", start: 15.5, dur: 30 },
-      { id: id("prep", semester, "Fri", "commute-home2"), kind: "commute", label: "→ Home", start: 17, dur: 20 },
       // NO cardio -- lower body day.
     ]),
-    Sat: [
-      { id: bidSat("sleep-am"), kind: "sleep", label: "Sleep", start: 0, dur: 330, fixed: true },
-      { id: bidSat("posing"), kind: "posing", label: "Posing", start: 5.5, dur: 25 },
-      { id: bidSat("meal-m1"), kind: "meal", label: "M1", start: 5.92, dur: 20 },
-      { id: bidSat("gym"), kind: "gym", label: "Upper body", start: 6.5, dur: 90, fixed: true },
-      { id: bidSat("mobility"), kind: "mobility", label: "Mobility", start: 8, dur: 20 },
-      { id: bidSat("commute-home"), kind: "commute", label: "→ Home", start: 8.33, dur: 20 },
-      { id: bidSat("meal-m2"), kind: "meal", label: "M2", start: 8.67, dur: 30 },
-      { id: bidSat("study-1"), kind: "study", label: "Study · 2h", start: 9.17, dur: 120 },
-      { id: bidSat("meal-break"), kind: "meal", label: "break", start: 11.17, dur: 20 },
-      { id: bidSat("study-2"), kind: "study", label: "Study · 1.5h", start: 11.5, dur: 90 },
-      { id: bidSat("meal-m3"), kind: "meal", label: "M3", start: 13, dur: 30 },
-      { id: bidSat("cardio"), kind: "cardio", label: "Cardio", start: 13.5, dur: 30, fixed: true },
-      { id: bidSat("free"), kind: "free", label: "Leisure", start: 14, dur: 150 },
-      { id: bidSat("meal-m4"), kind: "meal", label: "M4", start: 16.5, dur: 30 },
-      { id: bidSat("meal-m5"), kind: "meal", label: "M5", start: 19.5, dur: 40 },
-      { id: bidSat("read"), kind: "read", label: "Reading", start: 21, dur: 30 },
-      { id: bidSat("sleep-pm"), kind: "sleep", label: "Sleep", start: 21.75, dur: 480, fixed: true },
-    ],
+    Sat: prepGymDay(semester, "Sat", "Upper body", [
+      { id: id("prep", semester, "Sat", "cardio"), kind: "cardio", label: "Cardio", start: 14.333, dur: 30, fixed: true },
+      { id: id("prep", semester, "Sat", "content-yt"), kind: "content", label: "YouTube", start: 14.833, dur: 60 },
+      { id: id("prep", semester, "Sat", "free"), kind: "free", label: "Leisure", start: 15.833, dur: 100 },
+      { id: id("prep", semester, "Sat", "meal-m4"), kind: "meal", label: "M4", start: 17.5, dur: 30 },
+    ]),
     Sun: [
-      { id: bidSun("sleep-am"), kind: "sleep", label: "Sleep", start: 0, dur: 330, fixed: true },
-      { id: bidSun("posing"), kind: "posing", label: "Posing", start: 5.5, dur: 25 },
-      { id: bidSun("meal-m1"), kind: "meal", label: "M1", start: 5.92, dur: 20 },
-      { id: bidSun("cardio"), kind: "cardio", label: "Cardio", start: 6.5, dur: 30, fixed: true },
-      { id: bidSun("meal-m2"), kind: "meal", label: "M2", start: 7.0, dur: 25 },
-      { id: bidSun("chores"), kind: "chores", label: "Laundry+Clean", start: 7.5, dur: 60 },
-      { id: bidSun("study-1"), kind: "study", label: "Study · 2h", start: 8.5, dur: 120 },
-      { id: bidSun("meal-break1"), kind: "meal", label: "break", start: 10.5, dur: 20 },
-      { id: bidSun("study-2"), kind: "study", label: "Study · 1.5h", start: 10.83, dur: 90 },
-      { id: bidSun("meal-m3"), kind: "meal", label: "M3", start: 12.33, dur: 30 },
-      { id: bidSun("mealprep"), kind: "prep", label: "Meal Prep (main)", start: 12.83, dur: 180 },
-      { id: bidSun("study-3"), kind: "study", label: "Study · 1h", start: 15.83, dur: 60 },
-      { id: bidSun("meal-m4"), kind: "meal", label: "M4", start: 19.5, dur: 40 },
+      { id: bidSun("sleep-am"), kind: "sleep", label: "Sleep", start: 0, dur: 390, fixed: true },
+      { id: bidSun("posing"), kind: "posing", label: "Posing", start: 6.5, dur: 20 },
+      { id: bidSun("meal-m1"), kind: "meal", label: "M1", start: 6.833, dur: 10 },
+      { id: bidSun("cardio"), kind: "cardio", label: "Cardio", start: 7, dur: 30, fixed: true },
+      { id: bidSun("meal-m2"), kind: "meal", label: "M2", start: 7.5, dur: 20 },
+      { id: bidSun("chores"), kind: "chores", label: "Laundry+Clean", start: 7.833, dur: 60 },
+      { id: bidSun("study-1"), kind: "study", label: "Study · 2h", start: 8.833, dur: 120 },
+      { id: bidSun("meal-break1"), kind: "meal", label: "break", start: 10.833, dur: 20 },
+      { id: bidSun("study-2"), kind: "study", label: "Study · 1.5h", start: 11.167, dur: 90 },
+      { id: bidSun("meal-m3"), kind: "meal", label: "M3", start: 12.667, dur: 30 },
+      { id: bidSun("mealprep"), kind: "prep", label: "Meal Prep (main)", start: 13.167, dur: 180 },
+      { id: bidSun("study-3"), kind: "study", label: "Study · 1h", start: 16.167, dur: 60 },
+      { id: bidSun("meal-m4"), kind: "meal", label: "M4", start: 19.333, dur: 40 },
+      { id: bidSun("content-ig"), kind: "content", label: "IG post", start: 20, dur: 10 },
       { id: bidSun("read"), kind: "read", label: "Reading", start: 21, dur: 30 },
-      { id: bidSun("sleep-pm"), kind: "sleep", label: "Sleep", start: 21.75, dur: 480, fixed: true },
+      { id: bidSun("sleep-pm"), kind: "sleep", label: "Sleep", start: 22.5, dur: 480, fixed: true },
     ],
   };
 }
