@@ -12,7 +12,8 @@ export type BlockKind =
   | "prep"
   | "chores"
   | "read"
-  | "free";
+  | "free"
+  | "content";
 
 // 'prep': Aug 16 - Nov 2, 2026 (show prep window) -- posing blocks, MA
 // suspended, cardio expands to 5 days. 'normal': everything outside that

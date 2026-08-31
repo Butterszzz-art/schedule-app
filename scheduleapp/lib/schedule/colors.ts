@@ -16,4 +16,5 @@ export const BLOCK_COLORS: Record<BlockKind, { bg: string; accent: string }> = {
   chores: { bg: "#1A0808", accent: "#FCA5A5" },
   read: { bg: "#081408", accent: "#86EFAC" },
   free: { bg: "#0E0E0E", accent: "#C8F060" },
+  content: { bg: "#0D0D1A", accent: "#818CF8" },
 };

@@ -35,6 +35,7 @@ A personal mobile-first schedule and habit tracker app for a natural classic phy
 - chores:   #1A0808 / #FCA5A5
 - read:     #081408 / #86EFAC
 - free:     #0E0E0E / #C8F060
+- content:  #0D0D1A / #818CF8   ← new (IG/YouTube/Websites, prep mode)
 
 ---
 
@@ -48,10 +49,13 @@ Determined by checking today's date against this range.
 
 Key differences from normal:
 - **Martial arts SUSPENDED** — no MA blocks on any day
-- **Posing practice daily at 05:30** (fasted, ~25 min) before M1 and gym
-- **Cardio on 5 days**: Mon 17:30 · Thu 13:00 · Sat 13:30 · Wed 06:30 · Sun 06:30
+- **Wake 06:30, sleep 22:30** (retimed 2026-08-30, was 05:30/21:45) — still 8h non-negotiable, PREP mode only
+- **Posing practice daily at 06:30** (fasted, ~20 min) before M1 and gym
+- **M1 06:50 → commute to gym 07:10 → gym 07:30** — a real "→ Gym" commute block sits between M1 and gym now (didn't exist before the retime)
+- **Cardio on 5 days**: Mon 17:30 · Thu 14:20 · Sat 14:20 · Wed 07:00 · Sun 07:00
   - Wed and Sun get cardio because MA is gone and there's no lifting fatigue
   - Still NO cardio on Tue or Fri (lower body days — quad recovery)
+- **Content blocks daily**: Instagram post 20:00–20:10 every day; Website maintenance 20:15–21:00 Tue/Thu; YouTube 14:50–15:50 Saturday (see Content creation schedule below)
 - **Wed/Sun slots repurposed**: posing → cardio → full study morning → chores/prep as usual
 - **Study blocks are descending**: 2h → 1.5h with break between on gym days; 2h → 1.5h → 1h on rest days (Wed/Sun)
 
@@ -67,11 +71,11 @@ Key differences from normal:
 ## Critical schedule rules (apply to BOTH modes unless noted)
 
 1. **NO cardio on Tue or Fri** — lower body days, quad recovery is a competitive priority
-2. **Gym 06:00–07:30** on lifting days (Mon/Tue/Thu/Fri). Sat: 06:30–08:00 (slight later start)
+2. **Gym 07:30–09:00** on lifting days in PREP mode, all days incl. Sat (retimed 2026-08-30, was 06:00–07:30 / Sat 06:30–08:00). NORMAL mode keeps the original **06:00–07:30** (Sat 06:30–08:00).
 3. **Mobility 20 min** immediately after gym, before leaving
-4. **Wake 05:30, sleep 21:45** — 8 hours non-negotiable
+4. **Wake/sleep**: PREP mode 06:30 / 22:30 (retimed 2026-08-30, was 05:30/21:45). NORMAL mode still 05:30 / 21:45 — the retime wasn't applied there. Both are 8 hours non-negotiable.
 5. **Protein 164g every day** regardless of calorie level
-6. **Posing practice 05:30 daily** — PREP MODE only. Fasted. ~25 min.
+6. **Posing practice 06:30 daily** — PREP MODE only. Fasted. ~20 min. (was 05:30/~25 min before the 2026-08-30 retime)
 7. **Study blocks are descending in length**: 2h → 1.5h → (1h on full free days) with short breaks between. Never stack two long blocks without a break.
 8. **Lectures before 13:00 are skipped** — only attend mandatory sessions and anything starting ≥ 13:00
 
@@ -84,6 +88,16 @@ split into a flat training/rest split):
 |----------|---------|----------|---------|-------|-----|
 | Training | Lift day (Mon/Tue/Thu/Fri/Sat) | 2400 | 164g | 246g | 69g |
 | Rest | Nothing (Wed/Sun) | 2240 | 164g | 196g | 89g |
+
+## Content creation schedule (PREP mode, added 2026-08-30)
+| Task | When | Duration |
+|------|------|----------|
+| Instagram filming | During gym session (existing block) | 0 extra time |
+| Instagram post/caption | Daily 20:00–20:10 | 10 min |
+| YouTube (film + edit + upload) | Saturday 14:50–15:50 | 1h |
+| Website maintenance | Tuesday + Thursday 20:15–21:00 | 45 min × 2 |
+
+Instagram content is filmed during gym — no separate block needed. These are `content` block kind entries (see colour map above); not tracked as a habit category.
 
 ## Schedule mode detection in code
 ```typescript
