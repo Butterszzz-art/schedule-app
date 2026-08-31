@@ -44,6 +44,7 @@ const KIND_COLOUR: Record<BlockKind, string> = {
   chores: "red",
   read: "green",
   free: "green",
+  content: "purple",
 };
 
 export function generateICS(opts: GenerateOptions): string {
@@ -88,7 +89,42 @@ export function generateICS(opts: GenerateOptions): string {
   }
 
   lines.push("END:VCALENDAR");
-  return lines.join("\r\n") + "\r\n";
+  return lines.map(foldLine).join("\r\n") + "\r\n";
+}
+
+const utf8Encoder = new TextEncoder();
+
+/**
+ * RFC 5545 §3.1 line folding: no content line may exceed 75 *octets*, and a
+ * fold may not split a multi-octet UTF-8 character -- SUMMARY/DESCRIPTION
+ * here can contain accented text (uni course names are Dutch, e.g.
+ * "Wetenschapsfilosofie") that overflows 75 octets unfolded, which several
+ * calendar parsers reject outright rather than truncate. Wraps by UTF-8
+ * byte length per code point (not JS string length, which counts UTF-16
+ * code units) and reserves one octet on each continuation line for its
+ * required leading space.
+ */
+function foldLine(line: string): string {
+  if (utf8Encoder.encode(line).length <= 75) return line;
+
+  const codePoints = Array.from(line);
+  let result = "";
+  let current = "";
+  let currentBytes = 0;
+  let limit = 75;
+
+  for (const ch of codePoints) {
+    const chBytes = utf8Encoder.encode(ch).length;
+    if (currentBytes + chBytes > limit) {
+      result += current + "\r\n";
+      current = " ";
+      currentBytes = 1;
+      limit = 74; // 75 minus the leading space's 1 octet
+    }
+    current += ch;
+    currentBytes += chBytes;
+  }
+  return result + current;
 }
 
 function buildEvent(block: ScheduleBlock, date: string, userId: string): string[] {
