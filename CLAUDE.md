@@ -1,7 +1,9 @@
 # Schedule App — Claude Code Context
 
 ## What this is
-A personal mobile-first schedule and habit tracker app for a natural classic physique bodybuilder-student. Built to replace a static PDF schedule with a live, interactive system. The user is preparing for two shows in Oct/Nov 2026 while studying Psychology at UvA (Science Park, Amsterdam) and living on Zeeburgeiland.
+A personal mobile-first daily checklist app for a natural classic physique bodybuilder-student. Built to replace a static PDF schedule with a live, interactive system.
+
+**Changed 2026-10-09: no more timed schedule.** A strict schedule didn't work, so the app is now a flexible daily checklist: each day lists what needs doing (grouped by area: Anchors, Training, Uni, Fuel, Study & reading, Content, Home), ticked off in any order. The only times left are the two sleep anchors ("Up by 06:30" / "Lights out 22:30" in prep), which are checklist items. Tabs: **Today · Week · Routine · Prep**. Habits, Log and Tasks tabs were removed (the checklist + Week grid replace them). The day/mode rules below still decide *which* items show up on *which* days; the clock times in them are historical context, not something the app enforces. Side job: 12–16 h/week, logged per day in a hours card on Today (shift times still to come). The user is preparing for two shows in Oct/Nov 2026 while studying Psychology at UvA (Science Park, Amsterdam) and living on Zeeburgeiland.
 
 ## Tech stack
 - Next.js 14 (App Router)
@@ -18,10 +20,10 @@ A personal mobile-first schedule and habit tracker app for a natural classic phy
 - Font: Space Grotesk (400, 600, 700)
 - Max width: 430px (mobile-first, centred)
 - Cards: `border-radius: 12px`, `border: 1px solid #1A1A1A`
-- Bottom nav: fixed, blurred, 5 tabs
+- Bottom nav: fixed, blurred, 4 tabs (Today, Week, Routine, Prep)
 
 ## Block kind colour map
-- sleep:    #141414 / #3A3A3A
+- sleep:    #141414 / #9A9A9A (was #3A3A3A; lightened so ticked anchor checkboxes are visible)
 - meal:     #1C1408 / #C8962A
 - gym:      #081A10 / #4ADE80
 - ma:       #1A0A08 / #F87171
@@ -36,12 +38,13 @@ A personal mobile-first schedule and habit tracker app for a natural classic phy
 - read:     #081408 / #86EFAC
 - free:     #0E0E0E / #C8F060
 - content:  #0D0D1A / #818CF8   ← new (IG/YouTube/Websites, prep mode)
+- work:     #061A18 / #2DD4BF   ← new (side job hours)
 
 ---
 
 ## Schedule modes — CRITICAL
 
-The app has two distinct schedule modes that must be handled separately in `lib/schedule/blocks.ts`:
+The app has two distinct schedule modes; each has its own default routine in `lib/checklist/defaults.ts` (seeded into the `RoutineItem` table, then editable in the Routine tab):
 
 ### Mode 1: PREP MODE
 **Active: Aug 16, 2026 → Nov 2, 2026**
@@ -110,7 +113,7 @@ export function getScheduleMode(date: Date = new Date()): ScheduleMode {
 }
 ```
 
-All schedule-related functions must accept a `mode` parameter and return the correct block set.
+Each mode has its own routine (`RoutineItem.mode`); a week that straddles Nov 2 loads both.
 
 ## Competition timeline
 - Show 1: Oct 17, 2026 — NPC Spain Naturals, Aranjuez (live rehearsal)
@@ -125,60 +128,38 @@ All schedule-related functions must accept a `mode` parameter and return the cor
 
 Both semesters exist in both modes. Mode takes priority over semester for shared blocks (posing, cardio placement, MA). Semester only controls which uni blocks appear.
 
-## Habit categories
-| Key | Label | Icon | Block kinds tracked |
-|-----|-------|------|---------------------|
-| gym | Gym | 💪 | gym |
-| posing | Posing | 🕴 | posing (prep mode only) |
-| cardio | Cardio | 🏃 | cardio |
-| mobility | Mobility | 🧘 | mobility |
-| study | Study | 📚 | study |
-| nutrition | Nutrition | 🍱 | meal, prep |
-| reading | Reading | 📖 | read |
-| chores | Chores | 🧹 | chores |
-
-Posing habit only tracked during prep mode. Outside prep, the posing card is hidden.
-
 ## File structure
 ```
 app/
   (auth)/login/
   (app)/
-    today/
-    week/
-    habits/
-    log/
+    today/      ← daily checklist (day strip, areas, one-offs, side-job hours)
+    week/       ← done/missed grid for the week
+    routine/    ← edit which days each item shows up, add/remove items
     prep/
+    nutrition/
+    settings/   ← push notification opt-in (evening nudge at 20:30)
   api/
-    auth/[...nextauth]/
-    logs/
-    adjustments/
-    overrides/
-    settings/
-    weight/
-    push/
-    cron/
+    checklist/ extras/ routine/ work/ weight/ push/ cron/ auth/
 lib/
-  auth.ts
-  db.ts
+  checklist/
+    defaults.ts ← default routine per mode
+    logic.ts    ← items for a date (routine + uni), week grid
+    progress.ts ← per-item progress, one-off roll-over, day score
+    server.ts   ← DB loading + routine seeding
   schedule/
-    blocks.ts     ← ALL schedule data, both modes, both semesters
-    cascade.ts    ← auto-reschedule logic
-    types.ts      ← ScheduleMode, ScheduleBlock, DayKey, etc.
-    mode.ts       ← getScheduleMode(), isPrep(), etc.
-components/
-  ui/
-  layout/
-    BottomNav.tsx
-    Header.tsx
+    mode.ts     ← getScheduleMode(), isPrep()
+    days.ts     ← dayType(), dayKeyForDate()
+    uni.ts      ← dated UvA sessions (generated)
+    colors.ts   ← block kind colour map
 prisma/
   schema.prisma
   seed.ts
 ```
 
 ## What lives in DB vs code
-- **Code**: all block definitions, both modes, both semesters, cascade logic, mode detection
-- **DB**: logs (done/skipped), week overrides, block time adjustments, weight entries, push subscriptions, semester setting, mode is computed from date (not stored)
+- **Code**: default routines for both modes, uni timetable, mode detection, nutrition + prep data
+- **DB**: routine items (editable copy of the defaults), checklist progress per day, one-off items, side-job hours, weight entries, push subscriptions. Mode is computed from date (not stored).
 
 ## Phase completion order
 1. Scaffold

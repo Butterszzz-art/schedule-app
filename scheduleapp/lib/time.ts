@@ -73,3 +73,8 @@ export function formatHM(decimalHours: number): string {
   const m = ((totalMins % 60) + 60) % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
+
+/** True for a well-formed "YYYY-MM-DD" string. */
+export function isISODate(value: unknown): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}

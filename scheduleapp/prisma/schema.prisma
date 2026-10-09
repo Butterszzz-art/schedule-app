@@ -20,6 +20,10 @@ model User {
   settings        UserSettings?
   tasks           Task[]
   taskCompletions TaskCompletion[]
+  routineItems    RoutineItem[]
+  checklist       ChecklistEntry[]
+  extraTasks      ExtraTask[]
+  workLogs        WorkLog[]
 }
 
 model UserSettings {
@@ -32,6 +36,11 @@ model UserSettings {
   calendarToken String   @unique @default(cuid())
   updatedAt     DateTime @updatedAt
 }
+
+// LEGACY (timed-schedule era): DayLog, WeekOverride, BlockAdjustment,
+// Task and TaskCompletion are no longer read or written since the switch
+// to the daily checklist. Kept so the old history isn't lost; safe to drop
+// in a later migration.
 
 // A single logged block for a specific date
 model DayLog {
@@ -141,4 +150,74 @@ model TaskCompletion {
 
   @@unique([taskId, date])
   @@index([userId, date])
+}
+
+// ── Daily checklist ──────────────────────────────────────────────────────
+// The app is a flexible daily checklist: no clock times, just what needs
+// doing each day. A RoutineItem is one line on that list, per schedule
+// mode (prep/normal), seeded from lib/checklist/defaults.ts the first time
+// a mode is used and then editable in the Routine tab.
+model RoutineItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  mode      String // "prep" | "normal"
+  key       String // stable id, e.g. "posing"; custom items get "custom-<cuid>"
+  area      String // "anchors" | "body" | "fuel" | "mind" | "content" | "life"
+  kind      String // block-kind colour key, see lib/schedule/colors.ts
+  label     String
+  hint      String   @default("")
+  type      String   @default("check") // "check" | "count" | "chunks"
+  target    Int      @default(1) // count items: how many (e.g. 5 meals)
+  chunks    String[] @default([]) // chunk items: e.g. ["2h", "1.5h"]
+  days      Int[] // 0 = Mon ... 6 = Sun
+  order     Int      @default(0)
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, mode, key])
+  @@index([userId, mode])
+}
+
+// Progress on one checklist item on one date. `value` depends on the
+// item's type: check = 1, count = how many done, chunks = bitmask of the
+// chunks done. No row = nothing done yet.
+model ChecklistEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      String // ISO date
+  itemKey   String // RoutineItem.key, or "uni:<session id>"
+  value     Int
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date, itemKey])
+  @@index([userId, date])
+}
+
+// One-off "Also today" items. Unfinished ones roll over to today until
+// they're ticked off; doneOn records the day that happened.
+model ExtraTask {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      String // ISO date it was added for
+  label     String
+  doneOn    String? // ISO date it was ticked off
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+  @@index([userId, doneOn])
+}
+
+// Side-job hours per day (target 12-16h/week). Not part of the checklist score.
+model WorkLog {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  date   String // ISO date
+  hours  Float
+
+  @@unique([userId, date])
 }
