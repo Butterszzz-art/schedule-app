@@ -2,7 +2,7 @@ import type { BlockKind } from "./types";
 
 // From CLAUDE.md's block kind colour map: dark background + accent pair.
 export const BLOCK_COLORS: Record<BlockKind, { bg: string; accent: string }> = {
-  sleep: { bg: "#141414", accent: "#3A3A3A" },
+  sleep: { bg: "#141414", accent: "#9A9A9A" },
   meal: { bg: "#1C1408", accent: "#C8962A" },
   gym: { bg: "#081A10", accent: "#4ADE80" },
   ma: { bg: "#1A0A08", accent: "#F87171" },
@@ -17,4 +17,5 @@ export const BLOCK_COLORS: Record<BlockKind, { bg: string; accent: string }> = {
   read: { bg: "#081408", accent: "#86EFAC" },
   free: { bg: "#0E0E0E", accent: "#C8F060" },
   content: { bg: "#0D0D1A", accent: "#818CF8" },
+  work: { bg: "#061A18", accent: "#2DD4BF" },
 };

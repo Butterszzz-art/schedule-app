@@ -1,7 +1,8 @@
 # Schedule
 
-A personal mobile-first schedule and habit tracker — Today view, week overrides,
-habit streaks, history, nutrition targets, and a competition prep timeline. Built
+A personal mobile-first daily checklist — what needs doing each day, ticked off
+in any order, plus a week overview, an editable routine, side-job hours,
+nutrition targets, and a competition prep timeline. Built
 for a single user; see [`CLAUDE.md`](../CLAUDE.md) at the repo root for the full
 project context and design system.
 
@@ -59,25 +60,24 @@ node scripts/parse-timetable.mjs path/to/export.csv  # regenerate lib/schedule/u
 
 ## Architecture notes
 
-- **Schedule data lives in code, not the DB.** `lib/schedule/blocks.ts` holds
-  the fixed daily rhythm (sleep/gym/MA/cardio/posing/meals) as a
-  mode-and-semester-keyed template. Real university class sessions live
-  separately in `lib/schedule/uni.ts`, keyed by actual calendar date,
-  because the real UvA timetable is irregular week to week — a repeating
-  template can't represent it. `getBlocksForDate()` merges the two per day.
+- **No clock times.** The app used to be a timed block schedule; it is now
+  a daily checklist. The starting routine for each mode lives in code
+  (`lib/checklist/defaults.ts`) and is seeded into `RoutineItem` the first
+  time a mode is used, after which it's edited in the Routine tab. Real
+  university sessions come from `lib/schedule/uni.ts` (keyed by actual
+  date) and are added per day: anything from 13:00, plus non-lecture
+  sessions (seminars, tutorials, practicals, exams).
 - **Two schedule modes, derived from the date, never stored.**
   `lib/schedule/mode.ts`'s `getScheduleMode(date)` returns `'prep'`
   (Aug 16 – Nov 2, 2026: posing daily, MA suspended, cardio 5 days/week) or
   `'normal'` (everything else: MA on Wed/Sun, no posing, cardio 3
-  days/week). `SCHEDULE` is `Record<ScheduleMode, Record<SemesterKey,
-  WeekSchedule>>`. Normal mode's exact block data isn't sourced from
-  anything (the reference prototype `schedule-app.jsx` never implemented
-  it — its own `SCHEDULE.normal` is a same-as-prep placeholder); it's this
-  codebase's own construction from CLAUDE.md's written rules, adjustable
-  in `lib/schedule/blocks.ts`.
-- **The DB only stores what changes**: `DayLog` (done/skipped), `WeekOverride`
-  (per-week block toggles), `BlockAdjustment` (+15m pushes), `WeightEntry`,
-  `PushSubscription`, `NotifiedBlock` (push dedup), `UserSettings` (semester).
+  days/week). Each mode has its own routine.
+- **The DB stores**: `RoutineItem` (the editable routine), `ChecklistEntry`
+  (progress per item per day), `ExtraTask` (one-off items, which roll over
+  until done), `WorkLog` (side-job hours), `WeightEntry`,
+  `PushSubscription`, `NotifiedBlock` (push dedup). `DayLog`,
+  `WeekOverride`, `BlockAdjustment`, `Task` and `TaskCompletion` are
+  leftovers from the timed schedule, kept only for their history.
 - **Semester 2's uni data is currently empty** — that timetable isn't
   published yet. Re-run `scripts/parse-timetable.mjs` once it is.
 - Full build history and the reasoning behind each deviation from the
@@ -100,8 +100,8 @@ node scripts/parse-timetable.mjs path/to/export.csv  # regenerate lib/schedule/u
 
 ### Push notification reminders need an external cron, not Vercel Cron
 
-`/api/cron/notify` needs to be polled roughly every minute to catch each
-block's short notification window (see `lib/notify.ts`). Vercel's own Cron
+`/api/cron/notify` needs to be polled roughly every minute to catch the
+2-minute evening-nudge window at 20:30 (see `lib/notify.ts`). Vercel's own Cron
 Jobs are capped at once/day on the Hobby plan, so `vercel.json`
 deliberately does **not** define a `crons` entry (a sub-daily one blocks
 the whole deployment on Hobby).

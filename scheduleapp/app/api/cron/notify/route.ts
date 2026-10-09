@@ -1,52 +1,51 @@
 import { NextResponse } from "next/server";
+import { dayScore, extrasForDate } from "@/lib/checklist/progress";
+import { loadWeek } from "@/lib/checklist/server";
 import { isAuthorizedCronRequest } from "@/lib/cronAuth";
 import { prisma } from "@/lib/db";
-import { isInNotifyWindow, notificationBody } from "@/lib/notify";
+import { isNudgeTime, nudgeBody, NUDGE_ID } from "@/lib/notify";
 import { sendPushToUser } from "@/lib/push";
-import { getBlocksForDate } from "@/lib/schedule/blocks";
-import type { SemesterKey } from "@/lib/schedule/types";
-import { minutesSinceMidnight, todayISODate } from "@/lib/time";
+import { minutesSinceMidnight, startOfIsoWeek, todayISODate } from "@/lib/time";
 
 // An external scheduler (e.g. cron-job.org) hits this every minute --
 // see README.md's Deploying section for why this isn't a Vercel Cron
-// job. For every user, finds blocks whose notification window we're
-// currently inside and sends a push -- unless we already have a
-// NotifiedBlock row for that exact (user, date, block), which the
-// unique constraint enforces so concurrent/duplicate ticks can't
-// double-send.
+// job. Once a day, in the 20:30 window, it pushes an evening nudge with
+// how many checklist items are still open -- unless we already have a
+// NotifiedBlock row for (user, date, "evening-nudge"), which the unique
+// constraint enforces so concurrent/duplicate ticks can't double-send.
 async function handle(request: Request) {
   if (!isAuthorizedCronRequest(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const date = todayISODate();
-  const nowMinutes = minutesSinceMidnight();
+  if (!isNudgeTime(minutesSinceMidnight())) {
+    return NextResponse.json({ ok: true, sent: 0 });
+  }
 
-  const users = await prisma.user.findMany({ include: { settings: true } });
+  const date = todayISODate();
+  const users = await prisma.user.findMany({ select: { id: true } });
 
   let sent = 0;
   for (const user of users) {
-    const semester = (user.settings?.semester ?? 1) as SemesterKey;
-    const blocks = getBlocksForDate(date, semester);
+    const week = await loadWeek(user.id, startOfIsoWeek(date));
+    const { done, total } = dayScore(
+      week.itemsByDate[date],
+      week.valuesByDate[date],
+      extrasForDate(week.extras, date, date)
+    );
+    const body = nudgeBody(total - done);
+    if (!body) continue;
 
-    for (const block of blocks) {
-      if (!isInNotifyWindow(block, nowMinutes)) continue;
-
-      try {
-        await prisma.notifiedBlock.create({
-          data: { userId: user.id, date, blockId: block.id },
-        });
-      } catch {
-        continue; // already notified for this block today
-      }
-
-      await sendPushToUser(user.id, {
-        title: block.label,
-        body: notificationBody(block),
-        url: "/today",
+    try {
+      await prisma.notifiedBlock.create({
+        data: { userId: user.id, date, blockId: NUDGE_ID },
       });
-      sent++;
+    } catch {
+      continue; // already nudged today
     }
+
+    await sendPushToUser(user.id, { title: "Today", body, url: "/today" });
+    sent++;
   }
 
   return NextResponse.json({ ok: true, sent });

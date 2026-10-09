@@ -1,10 +1,10 @@
-import { dayType } from "./schedule/blocks";
+import { dayType } from "./schedule/days";
 import type { DayKey, SemesterKey } from "./schedule/types";
 
 export type NutritionDayType = "training" | "rest";
 
 // Upper/Lower/Rest is a pure day-of-week classification (see
-// lib/schedule/blocks.ts's dayType()) that's identical in both schedule
+// lib/schedule/days.ts's dayType()) that's identical in both schedule
 // modes -- Wed/Sun are nutritionally "rest" whether they get MA (normal
 // mode) or posing+cardio+study (prep mode). `semester` is accepted for
 // call-site stability but unused; nutrition targets don't depend on it.
@@ -47,5 +47,5 @@ export const NUTRITION_TARGETS: Record<NutritionDayType, NutritionTarget> = {
   },
 };
 
-// (5 training days + 2 rest days) / 7, per lib/schedule/blocks.ts's dayType().
+// (5 training days + 2 rest days) / 7, per lib/schedule/days.ts's dayType().
 export const WEEKLY_AVERAGE_CALORIES = 2354;

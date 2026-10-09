@@ -6,10 +6,8 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/today", label: "Today" },
   { href: "/week", label: "Week" },
-  { href: "/habits", label: "Habits" },
-  { href: "/log", label: "Log" },
+  { href: "/routine", label: "Routine" },
   { href: "/prep", label: "Prep" },
-  { href: "/tasks", label: "Tasks" },
 ] as const;
 
 export function BottomNav() {

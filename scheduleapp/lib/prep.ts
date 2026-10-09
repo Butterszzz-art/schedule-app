@@ -1,5 +1,5 @@
 // Static prep-blueprint data (CLAUDE.md's competition timeline). This is
-// content, not user data, so it lives in code like lib/schedule/blocks.ts.
+// content, not user data, so it lives in code like lib/checklist/defaults.ts.
 
 export interface PrepPhase {
   name: string;
