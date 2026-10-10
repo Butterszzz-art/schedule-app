@@ -5,7 +5,14 @@ import { addDays } from "@/lib/time";
 import { isArea } from "./areas";
 import { DEFAULT_ROUTINE } from "./defaults";
 import { itemsForDate } from "./logic";
-import type { ChecklistItem, DayValues, ExtraDTO, ItemType, RoutineItemDTO } from "./types";
+import type {
+  ChecklistItem,
+  DayValues,
+  ExtraDTO,
+  ItemType,
+  RoutineItemDTO,
+  ShiftDTO,
+} from "./types";
 
 type RoutineRow = Awaited<ReturnType<typeof prisma.routineItem.findMany>>[number];
 
@@ -54,7 +61,7 @@ export interface WeekData {
   itemsByDate: Record<string, ChecklistItem[]>;
   valuesByDate: Record<string, DayValues>;
   extras: ExtraDTO[];
-  workByDate: Record<string, number>;
+  shifts: ShiftDTO[];
 }
 
 // How far back an unfinished one-off item keeps rolling over.
@@ -71,7 +78,7 @@ export async function loadWeek(userId: string, monday: string): Promise<WeekData
     await Promise.all(modes.map(async (m) => [m, await getRoutine(userId, m)] as const))
   ) as Partial<Record<ScheduleMode, RoutineItemDTO[]>>;
 
-  const [entries, extras, work] = await Promise.all([
+  const [entries, extras, shifts] = await Promise.all([
     prisma.checklistEntry.findMany({
       where: { userId, date: { gte: monday, lte: sunday } },
     }),
@@ -86,7 +93,10 @@ export async function loadWeek(userId: string, monday: string): Promise<WeekData
       },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.workLog.findMany({ where: { userId, date: { gte: monday, lte: sunday } } }),
+    prisma.workShift.findMany({
+      where: { userId, date: { gte: monday, lte: sunday } },
+      orderBy: [{ date: "asc" }, { start: "asc" }],
+    }),
   ]);
 
   const itemsByDate: Record<string, ChecklistItem[]> = {};
@@ -101,7 +111,13 @@ export async function loadWeek(userId: string, monday: string): Promise<WeekData
     dates,
     itemsByDate,
     valuesByDate,
-    extras: extras.map((x) => ({ id: x.id, date: x.date, label: x.label, doneOn: x.doneOn })),
-    workByDate: Object.fromEntries(work.map((w) => [w.date, w.hours])),
+    extras: extras.map((x) => ({
+      id: x.id,
+      date: x.date,
+      scope: x.scope === "week" ? "week" : "day",
+      label: x.label,
+      doneOn: x.doneOn,
+    })),
+    shifts: shifts.map((s) => ({ id: s.id, date: s.date, start: s.start, end: s.end, note: s.note })),
   };
 }

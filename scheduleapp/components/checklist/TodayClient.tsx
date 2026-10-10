@@ -1,16 +1,23 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Header } from "@/components/layout/Header";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { AREAS } from "@/lib/checklist/areas";
-import { dayScore, extrasForDate, fraction, type ExtraView } from "@/lib/checklist/progress";
-import type { ChecklistItem, DayValues, ExtraDTO } from "@/lib/checklist/types";
+import {
+  dayScore,
+  extrasForDate,
+  fraction,
+  weekTasksFor,
+  type ExtraView,
+} from "@/lib/checklist/progress";
+import type { ChecklistItem, DayValues, ExtraDTO, ExtraScope, ShiftDTO } from "@/lib/checklist/types";
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
 import { DAYS, dayType, dayKeyForDate } from "@/lib/schedule/days";
 import type { ScheduleMode } from "@/lib/schedule/types";
-import { CheckButton, ChecklistRow } from "./ChecklistRow";
-import { WorkCard } from "./WorkCard";
+import { ChecklistRow } from "./ChecklistRow";
+import { ShiftCard } from "./ShiftCard";
+import { TaskSection } from "./TaskSection";
 
 export interface DayNutrition {
   label: string;
@@ -46,9 +53,10 @@ export function TodayClient({
   itemsByDate,
   initialValues,
   initialExtras,
-  initialWork,
+  initialShifts,
   nutritionByDate,
   countdown,
+  comingUp,
 }: {
   today: string;
   mode: ScheduleMode;
@@ -56,20 +64,20 @@ export function TodayClient({
   itemsByDate: Record<string, ChecklistItem[]>;
   initialValues: Record<string, DayValues>;
   initialExtras: ExtraDTO[];
-  initialWork: Record<string, number>;
+  initialShifts: ShiftDTO[];
   nutritionByDate: Record<string, DayNutrition>;
   countdown: { days: number; name: string } | null;
+  comingUp: ReactNode;
 }) {
   const [sel, setSel] = useState(today);
   const [values, setValues] = useState(initialValues);
   const [extras, setExtras] = useState(initialExtras);
-  const [work, setWork] = useState(initialWork);
-  const [draft, setDraft] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [shifts, setShifts] = useState(initialShifts);
 
   const items = itemsByDate[sel] ?? [];
   const dayValues = values[sel] ?? {};
   const dayExtras = extrasForDate(extras, sel, today);
+  const weekTasks = weekTasksFor(extras, dates[0], dates[0]);
   const { done, total } = dayScore(items, dayValues, dayExtras);
   const nutrition = nutritionByDate[sel];
   const isLowerDay = dayType(dayKeyForDate(sel)) === "lower";
@@ -108,32 +116,42 @@ export function TodayClient({
     }
   };
 
-  const addExtra = async () => {
-    const label = draft.trim();
-    if (!label) return;
-    setDraft("");
+  const addExtra = async (label: string, scope: ExtraScope) => {
     try {
-      const res = await send("/api/extras", "POST", { date: sel, label });
+      const res = await send("/api/extras", "POST", { date: sel, label, scope });
       const extra: ExtraDTO = await res.json();
       setExtras((all) => [...all, extra]);
+      return true;
     } catch {
-      setDraft(label);
+      return false;
     }
-    inputRef.current?.focus();
   };
 
-  const setHours = async (hours: number) => {
-    const prev = work[sel] ?? 0;
-    const date = sel;
-    setWork((all) => ({ ...all, [date]: hours }));
+  const addShift = async (shift: Omit<ShiftDTO, "id">) => {
     try {
-      await send("/api/work", "POST", { date, hours });
+      const res = await send("/api/shifts", "POST", shift);
+      const saved: ShiftDTO = await res.json();
+      setShifts((all) =>
+        [...all, saved].sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
+      );
+      return true;
     } catch {
-      setWork((all) => ({ ...all, [date]: prev }));
+      return false;
     }
   };
 
-  const weekHours = dates.reduce((s, d) => s + (work[d] ?? 0), 0);
+  const deleteShift = async (id: string) => {
+    const previous = shifts;
+    setShifts((all) => all.filter((s) => s.id !== id));
+    try {
+      await send(`/api/shifts/${id}`, "DELETE");
+    } catch {
+      setShifts(previous);
+    }
+  };
+
+  const selLabel = sel === today ? "today" : DAYS[dates.indexOf(sel)];
+  const shortDate = (iso: string) => `${dayKeyForDate(iso)} ${Number(iso.slice(8))}`;
 
   // Segmented summary bar: one segment per area, sized by item count.
   const segments = [
@@ -228,6 +246,8 @@ export function TodayClient({
           </div>
         </div>
 
+        {comingUp}
+
         {AREAS.map((area) => {
           const list = items.filter((i) => i.area === area.key);
           if (list.length === 0) return null;
@@ -263,71 +283,33 @@ export function TodayClient({
           );
         })}
 
-        <section className="flex flex-col gap-2">
-          <div className="flex items-baseline justify-between">
-            <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-foreground/50">
-              <span className="h-[7px] w-[7px] rounded-full bg-accent" />
-              Also {sel === today ? "today" : DAYS[dates.indexOf(sel)]}
-            </h3>
-            <span className="text-xs text-foreground/30 tabular-nums">
-              {dayExtras.filter((x) => x.doneOn).length}/{dayExtras.length}
-            </span>
-          </div>
-          {dayExtras.map((x) => (
-            <div
-              key={x.id}
-              className="flex min-h-[60px] items-center gap-3 rounded-xl border border-card-border bg-[#0E0E0E] py-2.5 pl-2.5 pr-1.5 transition-opacity"
-              style={{ opacity: x.doneOn ? 0.55 : 1 }}
-            >
-              <CheckButton
-                state={x.doneOn ? "done" : "open"}
-                accent={BLOCK_COLORS.free.accent}
-                label={`${x.doneOn ? "Mark not done" : "Mark done"}: ${x.label}`}
-                onClick={() => toggleExtra(x)}
-              />
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className={`break-words text-[15px] font-semibold ${x.doneOn ? "line-through decoration-white/30" : ""}`}>{x.label}</span>
-                {x.carriedFrom && (
-                  <span className="text-xs font-semibold text-accent">
-                    Carried over from {dayKeyForDate(x.carriedFrom)} {Number(x.carriedFrom.slice(8))}
-                  </span>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => deleteExtra(x.id)}
-                aria-label={`Remove ${x.label}`}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-lg text-foreground/30"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              addExtra();
-            }}
-          >
-            <input
-              ref={inputRef}
-              id="extra-input"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              maxLength={200}
-              autoComplete="off"
-              aria-label="Add a one-off task"
-              placeholder={`Add something for ${sel === today ? "today" : DAYS[dates.indexOf(sel)]}…`}
-              className="min-h-[46px] min-w-0 flex-1 rounded-xl border border-[#222] bg-[#141414] px-3.5 text-sm outline-none focus:border-accent"
-            />
-            <button type="submit" className="min-h-[46px] shrink-0 rounded-xl bg-accent px-4 text-sm font-bold text-[#0A0A0A]">
-              Add
-            </button>
-          </form>
-        </section>
+        <TaskSection
+          title={`Also ${selLabel}`}
+          tasks={dayExtras}
+          placeholder={`Add something for ${selLabel}…`}
+          carriedLabel={(from) => `Carried over from ${shortDate(from)}`}
+          onToggle={toggleExtra}
+          onDelete={deleteExtra}
+          onAdd={(label) => addExtra(label, "day")}
+        />
 
-        <WorkCard hoursToday={work[sel] ?? 0} hoursWeek={weekHours} onChange={setHours} />
+        <TaskSection
+          title="This week"
+          tasks={weekTasks}
+          placeholder="Add something for this week…"
+          carriedLabel={(from) => `Carried over from week of ${shortDate(from)}`}
+          onToggle={toggleExtra}
+          onDelete={deleteExtra}
+          onAdd={(label) => addExtra(label, "week")}
+        />
+
+        <ShiftCard
+          date={sel}
+          dayLabel={sel === today ? "today" : DAYS[dates.indexOf(sel)]}
+          shifts={shifts}
+          onAdd={addShift}
+          onDelete={deleteShift}
+        />
 
       </main>
     </>

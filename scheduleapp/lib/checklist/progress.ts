@@ -1,3 +1,4 @@
+import { addDays } from "@/lib/time";
 import type { ChecklistItem, DayValues, ExtraDTO } from "./types";
 
 // Progress maths for checklist items. Kept free of the uni timetable import
@@ -51,6 +52,7 @@ export function extrasForDate(
 ): ExtraView[] {
   const out: ExtraView[] = [];
   for (const x of extras) {
+    if (x.scope === "week") continue;
     if (x.doneOn) {
       if (x.doneOn === date) out.push({ ...x, carriedFrom: x.date !== date ? x.date : null });
     } else if (x.date === date) {
@@ -61,6 +63,35 @@ export function extrasForDate(
   }
   // Carried-over items first (oldest first), then the day's own.
   // "~" sorts after any ISO date in a plain string comparison.
+  const sortKey = (x: ExtraView) => x.carriedFrom ?? "~";
+  return out.sort((a, b) => (sortKey(a) < sortKey(b) ? -1 : sortKey(a) > sortKey(b) ? 1 : 0));
+}
+
+/**
+ * "This week" tasks for the ISO week starting `monday`. Same rules as
+ * extrasForDate, a week at a time: a finished task shows in the week it was
+ * ticked off; an unfinished one shows in its own week and rolls over into
+ * the current week (never into other weeks) until it's done.
+ */
+export function weekTasksFor(
+  extras: ExtraDTO[],
+  monday: string,
+  thisMonday: string
+): ExtraView[] {
+  const sunday = addDays(monday, 6);
+  const out: ExtraView[] = [];
+  for (const x of extras) {
+    if (x.scope !== "week") continue;
+    if (x.doneOn) {
+      if (x.doneOn >= monday && x.doneOn <= sunday) {
+        out.push({ ...x, carriedFrom: x.date !== monday ? x.date : null });
+      }
+    } else if (x.date === monday) {
+      out.push({ ...x, carriedFrom: null });
+    } else if (monday === thisMonday && x.date < monday) {
+      out.push({ ...x, carriedFrom: x.date });
+    }
+  }
   const sortKey = (x: ExtraView) => x.carriedFrom ?? "~";
   return out.sort((a, b) => (sortKey(a) < sortKey(b) ? -1 : sortKey(a) > sortKey(b) ? 1 : 0));
 }
