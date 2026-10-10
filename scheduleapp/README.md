@@ -99,6 +99,17 @@ node scripts/parse-timetable.mjs path/to/export.csv  # regenerate lib/schedule/u
    should be the deployment's real `https://…vercel.app` URL).
 4. Redeploy.
 
+### Database migrations run on every deploy
+
+Vercel runs the `vercel-build` script (`prisma migrate deploy && next
+build`) instead of `build`, so new tables and columns are applied to the
+database before the new code goes live. Without this, a deploy that adds a
+table crashes every page that reads it until someone runs the migration by
+hand. Migrations use `DATABASE_URL_UNPOOLED` (set automatically by the
+Neon integration) or `DIRECT_URL` when present, falling back to
+`DATABASE_URL` — see `prisma.config.ts`. If you've overridden the Build
+Command in Vercel's project settings, clear it so `vercel-build` is used.
+
 ### Push notification reminders need an external cron, not Vercel Cron
 
 `/api/cron/notify` needs to be polled roughly every minute to catch the
