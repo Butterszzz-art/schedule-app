@@ -1,7 +1,7 @@
 import { UNI_SESSIONS } from "@/lib/schedule/uni";
 import { dayIndexForDate } from "@/lib/schedule/days";
 import type { UniSession } from "@/lib/schedule/types";
-import { formatHM } from "@/lib/time";
+import { addDays, formatHM } from "@/lib/time";
 import { AREA_KEYS } from "./areas";
 import { fraction } from "./progress";
 import type { ChecklistItem, DayValues, RoutineItemDTO } from "./types";
@@ -14,8 +14,48 @@ import type { ChecklistItem, DayValues, RoutineItemDTO } from "./types";
 // question hours only show up from 13:00 on (earlier ones are skipped).
 const OPTIONAL_UNI_TYPES = ["Lecture", "Question session"];
 
+const ASSESSMENT = /exam|test|resit|presentation/i;
+const RESIT = /resit/i;
+
 export function attendsSession(s: Pick<UniSession, "type" | "start">): boolean {
+  // Resits only matter if you need them; they show under "Coming up" instead.
+  if (RESIT.test(s.type)) return false;
   return s.start >= 13 || !OPTIONAL_UNI_TYPES.includes(s.type);
+}
+
+export interface Assessment {
+  id: string;
+  date: string;
+  type: string;
+  courseName: string;
+  start: number;
+  location: string;
+  resit: boolean;
+}
+
+/**
+ * Exams, tests, resits and presentations from the timetable, from `today`
+ * through `days` days ahead. The timetable doesn't carry homework
+ * deadlines -- those live in Canvas -- so this is graded sessions only.
+ */
+export function upcomingAssessments(
+  today: string,
+  days = 21,
+  sessions: UniSession[] = UNI_SESSIONS
+): Assessment[] {
+  const until = addDays(today, days);
+  return sessions
+    .filter((s) => ASSESSMENT.test(s.type) && s.date >= today && s.date <= until)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start)
+    .map((s) => ({
+      id: s.id,
+      date: s.date,
+      type: s.type,
+      courseName: s.courseName,
+      start: s.start,
+      location: s.location,
+      resit: RESIT.test(s.type),
+    }));
 }
 
 export function uniItemsForDate(

@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_ROUTINE } from "@/lib/checklist/defaults";
-import { attendsSession, buildWeekRows, itemsForDate, uniItemsForDate } from "@/lib/checklist/logic";
-import { dayScore, extrasForDate, fraction, fullValue } from "@/lib/checklist/progress";
+import {
+  attendsSession,
+  buildWeekRows,
+  itemsForDate,
+  uniItemsForDate,
+  upcomingAssessments,
+} from "@/lib/checklist/logic";
+import { dayScore, extrasForDate, fraction, fullValue, weekTasksFor } from "@/lib/checklist/progress";
+import { formatHours, shiftHours, totalHours } from "@/lib/checklist/shifts";
 import type { ExtraDTO, RoutineItemDTO } from "@/lib/checklist/types";
 import type { UniSession } from "@/lib/schedule/types";
 
@@ -89,6 +96,24 @@ describe("uni sessions", () => {
     expect(attendsSession({ type: "Question session", start: 10 })).toBe(false);
   });
 
+  it("leaves resits off the daily list", () => {
+    expect(attendsSession({ type: "Computer-based resit", start: 13 })).toBe(false);
+  });
+
+  it("lists upcoming exams, tests and resits but not lectures", () => {
+    const sessions = [
+      session({ id: "lec", date: "2026-10-12" }),
+      session({ id: "exam", date: "2026-10-20", type: "Computer-based examination" }),
+      session({ id: "resit", date: "2026-10-21", type: "Computer-based resit" }),
+      session({ id: "far", date: "2026-12-16", type: "Examination" }),
+    ];
+    const out = upcomingAssessments("2026-10-10", 21, sessions);
+    expect(out.map((a) => [a.id, a.resit])).toEqual([
+      ["exam", false],
+      ["resit", true],
+    ]);
+  });
+
   it("turns a session into a uni item with its time and room", () => {
     const [item] = uniItemsForDate(MON, [session({})]);
     expect(item.key).toBe("uni:s");
@@ -128,9 +153,9 @@ describe("fraction", () => {
 
 describe("extrasForDate", () => {
   const extras: ExtraDTO[] = [
-    { id: "a", date: WED, label: "Email supervisor", doneOn: null },
-    { id: "b", date: FRI, label: "Buy rice", doneOn: null },
-    { id: "c", date: TUE, label: "Return book", doneOn: WED },
+    { id: "a", date: WED, scope: "day", label: "Email supervisor", doneOn: null },
+    { id: "b", date: FRI, scope: "day", label: "Buy rice", doneOn: null },
+    { id: "c", date: TUE, scope: "day", label: "Return book", doneOn: WED },
   ];
 
   it("rolls unfinished items over onto today", () => {
@@ -157,7 +182,7 @@ describe("dayScore", () => {
     const items = itemsForDate(routine("prep"), FRI, []);
     const values = { wake: 1, meals: 3, posing: 1 };
     const extras = extrasForDate(
-      [{ id: "x", date: FRI, label: "x", doneOn: FRI }],
+      [{ id: "x", date: FRI, scope: "day", label: "x", doneOn: FRI }],
       FRI,
       FRI
     );
@@ -175,5 +200,49 @@ describe("buildWeekRows", () => {
     const gym = rows.find((r) => r.key === "gym")!;
     expect(gym.cells).toEqual(["full", "miss", "none", "due", "due", "due", "none"]);
     expect(rows.filter((r) => r.kind === "gym")).toHaveLength(1);
+  });
+});
+
+describe("weekTasksFor", () => {
+  const LAST_MON = "2026-09-28";
+  const tasks: ExtraDTO[] = [
+    { id: "old", date: LAST_MON, scope: "week", label: "Book physio", doneOn: null },
+    { id: "now", date: MON, scope: "week", label: "Edit YouTube intro", doneOn: null },
+    { id: "done", date: LAST_MON, scope: "week", label: "Order tan", doneOn: TUE },
+    { id: "day", date: MON, scope: "day", label: "Not a week task", doneOn: null },
+  ];
+
+  it("shows this week's tasks plus unfinished ones from earlier weeks", () => {
+    const out = weekTasksFor(tasks, MON, MON);
+    expect(out.map((x) => [x.id, x.carriedFrom])).toEqual([
+      ["old", LAST_MON],
+      ["done", LAST_MON],
+      ["now", null],
+    ]);
+  });
+
+  it("keeps week tasks out of the daily list", () => {
+    expect(extrasForDate(tasks, MON, MON).map((x) => x.id)).toEqual(["day"]);
+  });
+
+  it("does not carry tasks into a past week", () => {
+    expect(weekTasksFor(tasks, LAST_MON, MON).map((x) => x.id)).toEqual(["old"]);
+  });
+});
+
+describe("shifts", () => {
+  it("counts hours between start and end", () => {
+    expect(shiftHours("17:00", "21:30")).toBe(4.5);
+  });
+
+  it("handles shifts past midnight", () => {
+    expect(shiftHours("22:00", "02:00")).toBe(4);
+  });
+
+  it("totals a week and formats it", () => {
+    expect(totalHours([{ start: "09:00", end: "13:00" }, { start: "17:00", end: "20:15" }])).toBe(7.25);
+    expect(formatHours(7.25)).toBe("7h 15m");
+    expect(formatHours(3.5)).toBe("3.5h");
+    expect(formatHours(4)).toBe("4h");
   });
 });

@@ -24,6 +24,7 @@ model User {
   checklist       ChecklistEntry[]
   extraTasks      ExtraTask[]
   workLogs        WorkLog[]
+  workShifts      WorkShift[]
 }
 
 model UserSettings {
@@ -196,13 +197,16 @@ model ChecklistEntry {
   @@index([userId, date])
 }
 
-// One-off "Also today" items. Unfinished ones roll over to today until
-// they're ticked off; doneOn records the day that happened.
+// One-off tasks with no time slot. scope "day": for one date ("Also
+// today"). scope "week": for the whole ISO week, `date` is that week's
+// Monday ("This week"). Unfinished ones roll over (onto today / into the
+// current week) until ticked off; doneOn records the day that happened.
 model ExtraTask {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
-  date      String // ISO date it was added for
+  date      String // ISO date it was added for (week scope: that week's Monday)
+  scope     String   @default("day") // "day" | "week"
   label     String
   doneOn    String? // ISO date it was ticked off
   createdAt DateTime @default(now())
@@ -211,7 +215,7 @@ model ExtraTask {
   @@index([userId, doneOn])
 }
 
-// Side-job hours per day (target 12-16h/week). Not part of the checklist score.
+// LEGACY: per-day side-job hours, replaced by WorkShift on 2026-10-10.
 model WorkLog {
   id     String @id @default(cuid())
   userId String
@@ -220,4 +224,19 @@ model WorkLog {
   hours  Float
 
   @@unique([userId, date])
+}
+
+// One side-job shift. Hours are derived from start/end ("HH:MM", an end
+// before the start means the shift runs past midnight). Target 12-16h/week.
+model WorkShift {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      String // ISO date the shift starts on
+  start     String // "HH:MM"
+  end       String // "HH:MM"
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
 }

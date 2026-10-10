@@ -73,10 +73,11 @@ node scripts/parse-timetable.mjs path/to/export.csv  # regenerate lib/schedule/u
   `'normal'` (everything else: MA on Wed/Sun, no posing, cardio 3
   days/week). Each mode has its own routine.
 - **The DB stores**: `RoutineItem` (the editable routine), `ChecklistEntry`
-  (progress per item per day), `ExtraTask` (one-off items, which roll over
-  until done), `WorkLog` (side-job hours), `WeightEntry`,
+  (progress per item per day), `ExtraTask` (untimed tasks for a day or a
+  week, which roll over until done), `WorkShift` (side-job shifts),
+  `WeightEntry`,
   `PushSubscription`, `NotifiedBlock` (push dedup). `DayLog`,
-  `WeekOverride`, `BlockAdjustment`, `Task` and `TaskCompletion` are
+  `WeekOverride`, `BlockAdjustment`, `Task`, `TaskCompletion` and `WorkLog` are
   leftovers from the timed schedule, kept only for their history.
 - **Semester 2's uni data is currently empty** — that timetable isn't
   published yet. Re-run `scripts/parse-timetable.mjs` once it is.

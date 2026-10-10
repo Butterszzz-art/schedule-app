@@ -25,11 +25,22 @@ export interface RoutineItemDTO extends RoutineItemDef {
 /** A checklist line resolved for one specific date. */
 export type ChecklistItem = Omit<RoutineItemDef, "days">;
 
+export type ExtraScope = "day" | "week";
+
 export interface ExtraDTO {
   id: string;
-  date: string;
+  date: string; // week scope: that week's Monday
+  scope: ExtraScope;
   label: string;
   doneOn: string | null;
+}
+
+export interface ShiftDTO {
+  id: string;
+  date: string;
+  start: string; // "HH:MM"
+  end: string; // "HH:MM"
+  note: string;
 }
 
 /** checklist values for one date, keyed by item key. */

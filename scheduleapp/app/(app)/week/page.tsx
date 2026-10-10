@@ -1,7 +1,8 @@
 import { Header } from "@/components/layout/Header";
 import { auth } from "@/lib/auth";
 import { buildWeekRows, type CellState } from "@/lib/checklist/logic";
-import { dayScore, extrasForDate } from "@/lib/checklist/progress";
+import { dayScore, extrasForDate, weekTasksFor } from "@/lib/checklist/progress";
+import { formatHours, shiftHours, SHIFT_TARGET_HIGH, SHIFT_TARGET_LOW, totalHours } from "@/lib/checklist/shifts";
 import { loadWeek } from "@/lib/checklist/server";
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
 import { DAYS } from "@/lib/schedule/days";
@@ -26,6 +27,10 @@ export default async function WeekPage() {
   const today = todayISODate();
   const week = await loadWeek(userId, startOfIsoWeek(today));
   const rows = buildWeekRows(week.dates, week.itemsByDate, week.valuesByDate, today);
+  const weekTasks = weekTasksFor(week.extras, week.dates[0], week.dates[0]);
+  const hoursByDate = (date: string) =>
+    week.shifts.filter((s) => s.date === date).reduce((sum, s) => sum + shiftHours(s.start, s.end), 0);
+  const weekHours = totalHours(week.shifts);
 
   const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) =>
     new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { ...opts, timeZone: "UTC" });
@@ -86,12 +91,28 @@ export default async function WeekPage() {
                 <td className="py-2 pl-3">Side job</td>
                 {week.dates.map((date) => (
                   <td key={date} className="px-1 py-2 text-center tabular-nums" style={{ color: BLOCK_COLORS.work.accent }}>
-                    {week.workByDate[date] ? `${week.workByDate[date]}h` : ""}
+                    {hoursByDate(date) ? formatHours(hoursByDate(date)) : ""}
                   </td>
                 ))}
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-0.5 rounded-xl border border-card-border bg-[#111] p-3">
+            <span className="text-xs text-foreground/50">Weekly tasks</span>
+            <span className="text-xl font-bold tabular-nums">
+              {weekTasks.filter((x) => x.doneOn).length}/{weekTasks.length}
+            </span>
+          </div>
+          <div className="flex flex-col gap-0.5 rounded-xl border border-card-border p-3" style={{ background: BLOCK_COLORS.work.bg }}>
+            <span className="text-xs text-foreground/50">Side job</span>
+            <span className="text-xl font-bold tabular-nums">
+              {formatHours(weekHours)}
+              <span className="text-xs font-normal text-foreground/50"> / {SHIFT_TARGET_LOW}–{SHIFT_TARGET_HIGH}h</span>
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3.5 text-xs text-foreground/50">

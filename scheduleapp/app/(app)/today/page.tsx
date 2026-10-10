@@ -1,10 +1,12 @@
 import { auth } from "@/lib/auth";
+import { upcomingAssessments } from "@/lib/checklist/logic";
 import { loadWeek } from "@/lib/checklist/server";
 import { getDayType, NUTRITION_TARGETS } from "@/lib/nutrition";
 import { daysUntil, nextShow } from "@/lib/prep";
 import { dayKeyForDate } from "@/lib/schedule/days";
 import { getScheduleMode } from "@/lib/schedule/mode";
 import { startOfIsoWeek, todayISODate } from "@/lib/time";
+import { ComingUp } from "@/components/checklist/ComingUp";
 import { TodayClient, type DayNutrition } from "@/components/checklist/TodayClient";
 
 export default async function TodayPage() {
@@ -40,9 +42,10 @@ export default async function TodayPage() {
       itemsByDate={week.itemsByDate}
       initialValues={week.valuesByDate}
       initialExtras={week.extras}
-      initialWork={week.workByDate}
+      initialShifts={week.shifts}
       nutritionByDate={nutritionByDate}
       countdown={countdown}
+      comingUp={<ComingUp today={today} assessments={upcomingAssessments(today)} />}
     />
   );
 }

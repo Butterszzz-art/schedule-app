@@ -3,7 +3,7 @@
 ## What this is
 A personal mobile-first daily checklist app for a natural classic physique bodybuilder-student. Built to replace a static PDF schedule with a live, interactive system.
 
-**Changed 2026-10-09: no more timed schedule.** A strict schedule didn't work, so the app is now a flexible daily checklist: each day lists what needs doing (grouped by area: Anchors, Training, Uni, Fuel, Study & reading, Content, Home), ticked off in any order. The only times left are the two sleep anchors ("Up by 06:30" / "Lights out 22:30" in prep), which are checklist items. Tabs: **Today · Week · Routine · Prep**. Habits, Log and Tasks tabs were removed (the checklist + Week grid replace them). The day/mode rules below still decide *which* items show up on *which* days; the clock times in them are historical context, not something the app enforces. Side job: 12–16 h/week, logged per day in a hours card on Today (shift times still to come). The user is preparing for two shows in Oct/Nov 2026 while studying Psychology at UvA (Science Park, Amsterdam) and living on Zeeburgeiland.
+**Changed 2026-10-09: no more timed schedule.** A strict schedule didn't work, so the app is now a flexible daily checklist: each day lists what needs doing (grouped by area: Anchors, Training, Uni, Fuel, Study & reading, Content, Home), ticked off in any order. The only times left are the two sleep anchors ("Up by 06:30" / "Lights out 22:30" in prep), which are checklist items. Tabs: **Today · Week · Routine · Prep**. Habits, Log and Tasks tabs were removed (the checklist + Week grid replace them). The day/mode rules below still decide *which* items show up on *which* days; the clock times in them are historical context, not something the app enforces. Side job: 12–16 h/week, tracked as shifts (start–end times) in the Side job card on Today, with a weekly total against the target. Untimed tasks: "Also today" (one day) and "This week" (any day that week); unfinished ones roll over. Today also shows a "Coming up at uni" card with exams/tests/presentations from the timetable in the next 3 weeks (the timetable has no homework deadlines — those live in Canvas, which the app can't see). The user is preparing for two shows in Oct/Nov 2026 while studying Psychology at UvA (Science Park, Amsterdam) and living on Zeeburgeiland.
 
 ## Tech stack
 - Next.js 14 (App Router)
@@ -140,12 +140,13 @@ app/
     nutrition/
     settings/   ← push notification opt-in (evening nudge at 20:30)
   api/
-    checklist/ extras/ routine/ work/ weight/ push/ cron/ auth/
+    checklist/ extras/ routine/ shifts/ weight/ push/ cron/ auth/
 lib/
   checklist/
     defaults.ts ← default routine per mode
     logic.ts    ← items for a date (routine + uni), week grid
-    progress.ts ← per-item progress, one-off roll-over, day score
+    progress.ts ← per-item progress, day/week task roll-over, day score
+    shifts.ts   ← side-job shift hours + weekly target
     server.ts   ← DB loading + routine seeding
   schedule/
     mode.ts     ← getScheduleMode(), isPrep()
@@ -159,7 +160,7 @@ prisma/
 
 ## What lives in DB vs code
 - **Code**: default routines for both modes, uni timetable, mode detection, nutrition + prep data
-- **DB**: routine items (editable copy of the defaults), checklist progress per day, one-off items, side-job hours, weight entries, push subscriptions. Mode is computed from date (not stored).
+- **DB**: routine items (editable copy of the defaults), checklist progress per day, day/week tasks, side-job shifts, weight entries, push subscriptions. Mode is computed from date (not stored).
 
 ## Phase completion order
 1. Scaffold
