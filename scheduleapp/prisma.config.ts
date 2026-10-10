@@ -9,7 +9,13 @@ export default defineConfig({
     path: "prisma/migrations",
     seed: "tsx prisma/seed.ts",
   },
+  // Only the Prisma CLI (migrate, studio, seed) uses this; the app itself
+  // connects via lib/db.ts. Migrations need a direct connection, not Neon's
+  // pooled one, so prefer the unpooled URL the Vercel/Neon integration sets.
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url:
+      process.env["DATABASE_URL_UNPOOLED"] ??
+      process.env["DIRECT_URL"] ??
+      process.env["DATABASE_URL"],
   },
 });
