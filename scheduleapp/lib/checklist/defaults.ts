@@ -31,12 +31,14 @@ function shared(): RoutineItemDef[] {
     item({ key: "gym-upper", area: "body", kind: "gym", label: "Gym · Upper body", days: UPPER }),
     item({ key: "gym-lower", area: "body", kind: "gym", label: "Gym · Lower body", days: LOWER }),
     item({ key: "meals", area: "fuel", kind: "meal", label: "Meals", type: "count", target: 5, hint: "Tap each one as you eat it", days: ALL }),
-    item({ key: "protein", area: "fuel", kind: "meal", label: "Protein 164 g", days: ALL }),
+    item({ key: "protein", area: "fuel", kind: "meal", label: "Protein ~160 g", days: ALL }),
     item({ key: "mini-prep", area: "fuel", kind: "prep", label: "Mini meal prep", hint: "~1h", days: [2] }),
     item({ key: "main-prep", area: "fuel", kind: "prep", label: "Meal prep (main)", hint: "~3h, batch for the week", days: [6] }),
     item({ key: "study-lift", area: "mind", kind: "study", label: "Study", type: "chunks", chunks: ["2h", "1.5h"], hint: STUDY_HINT, days: LIFT }),
     item({ key: "study-rest", area: "mind", kind: "study", label: "Study", type: "chunks", chunks: ["2h", "1.5h", "1h"], hint: STUDY_HINT, days: REST }),
     item({ key: "read", area: "mind", kind: "read", label: "Reading", hint: "30 min", days: ALL }),
+    item({ key: "pt-checkin", area: "work", kind: "work", label: "PT client check-ins", hint: "Evening · online clients (max 3 now, up to 5 after Dec 16)", days: [0, 3] }),
+    item({ key: "pt-programming", area: "work", kind: "work", label: "PT programming", hint: "Write/adjust client programs", days: [6] }),
     item({ key: "chores", area: "life", kind: "chores", label: "Chores", hint: "~1h", days: [2] }),
     item({ key: "laundry", area: "life", kind: "chores", label: "Laundry + clean", hint: "~1h", days: [6] }),
   ];
@@ -44,9 +46,9 @@ function shared(): RoutineItemDef[] {
 
 export const DEFAULT_ROUTINE: Record<ScheduleMode, RoutineItemDef[]> = {
   prep: [
-    item({ key: "wake", area: "anchors", kind: "sleep", label: "Up by 06:30", days: ALL }),
-    item({ key: "bed", area: "anchors", kind: "sleep", label: "Lights out 22:30", hint: "8 hours, non-negotiable", days: ALL }),
-    item({ key: "posing", area: "body", kind: "posing", label: "Posing practice", hint: "Fasted, before M1 · ~20 min", days: ALL }),
+    item({ key: "wake", area: "anchors", kind: "sleep", label: "Up by 05:45", days: ALL }),
+    item({ key: "bed", area: "anchors", kind: "sleep", label: "Lights out 21:45", hint: "8 hours, non-negotiable", days: ALL }),
+    item({ key: "posing", area: "body", kind: "posing", label: "Posing practice", hint: "After gym (rest days: any time) · ~20 min", days: ALL }),
     item({ key: "mobility", area: "body", kind: "mobility", label: "Mobility", hint: "20 min, straight after gym", days: LIFT }),
     item({ key: "cardio", area: "body", kind: "cardio", label: "Cardio", hint: "30 min", days: [0, 2, 3, 5, 6] }),
     ...shared(),
@@ -55,7 +57,7 @@ export const DEFAULT_ROUTINE: Record<ScheduleMode, RoutineItemDef[]> = {
     item({ key: "yt", area: "content", kind: "content", label: "YouTube: film, edit, upload", hint: "~1h", days: [5] }),
   ],
   normal: [
-    item({ key: "wake", area: "anchors", kind: "sleep", label: "Up by 05:30", days: ALL }),
+    item({ key: "wake", area: "anchors", kind: "sleep", label: "Up by 05:45", days: ALL }),
     item({ key: "bed", area: "anchors", kind: "sleep", label: "Lights out 21:45", hint: "8 hours, non-negotiable", days: ALL }),
     item({ key: "ma", area: "body", kind: "ma", label: "Martial arts", hint: "Science Park", days: REST }),
     item({ key: "mobility", area: "body", kind: "mobility", label: "Mobility", hint: "20 min, straight after training", days: ALL }),

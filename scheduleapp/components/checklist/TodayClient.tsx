@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Header } from "@/components/layout/Header";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { AREAS } from "@/lib/checklist/areas";
+import { applyDayPlan } from "@/lib/checklist/dayplan";
 import {
   dayScore,
   extrasForDate,
@@ -74,7 +75,8 @@ export function TodayClient({
   const [extras, setExtras] = useState(initialExtras);
   const [shifts, setShifts] = useState(initialShifts);
 
-  const items = itemsByDate[sel] ?? [];
+  // Sleep/meal/gym times follow the shifts logged for that day.
+  const items = applyDayPlan(itemsByDate[sel] ?? [], sel, shifts);
   const dayValues = values[sel] ?? {};
   const dayExtras = extrasForDate(extras, sel, today);
   const weekTasks = weekTasksFor(extras, dates[0], dates[0]);
@@ -270,7 +272,7 @@ export function TodayClient({
                   value={dayValues[item.key]}
                   hint={
                     item.key === "protein" && nutrition
-                      ? `${nutrition.calories} kcal · ${nutrition.carbs} g carbs · ${nutrition.fat} g fat`
+                      ? `${nutrition.calories} kcal · roughly ${nutrition.carbs} g carbs · ${nutrition.fat} g fat`
                       : undefined
                   }
                   onChange={(v) => setValue(sel, item.key, v)}

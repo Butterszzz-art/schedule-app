@@ -1,5 +1,7 @@
-// AUTO-GENERATED from timetable_2026-06-28.csv — do not hand-edit.
-// Re-run scripts/parse-timetable.mjs (with a fresh CSV export) to regenerate.
+// AUTO-GENERATED from timetable_2026-06-28.csv, then hand-edited on 2026-10-20 (see below).
+// Re-running scripts/parse-timetable.mjs overwrites the hand edits: re-apply them after.
+// Hand edits: + Review Jaar 2 PB seminar Oct 27; - duplicate Leren en Geheugen seminar Nov 27;
+// notes on the Nov 19 interim test (optional) and the Dec 16 back-to-back exams.
 import type { UniSession } from "./types";
 
 export const UNI_SESSIONS: UniSession[] = [
@@ -70,6 +72,7 @@ export const UNI_SESSIONS: UniSession[] = [
   { id: "5102PETB6Y-2026-10-22-1500-64", date: "2026-10-22", courseCode: "5102PETB6Y", courseName: "Van Perceptie tot Bewustzijn", type: "Computer-based examination", start: 15, end: 16.5, location: "World Fashion Center Westhal", note: "" },
   { id: "5102MIEN6Y-2026-10-26-0900-65", date: "2026-10-26", courseCode: "5102MIEN6Y", courseName: "Review Jaar 2 PB", type: "Lecture", start: 9, end: 9.75, location: "SP C0.110", note: "" },
   { id: "5102LEGE9Y-2026-10-26-1500-66", date: "2026-10-26", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Lecture", start: 15, end: 16.75, location: "SP C1.110", note: "" },
+  { id: "5102MIEN6Y-2026-10-27-1100-manual", date: "2026-10-27", courseCode: "5102MIEN6Y", courseName: "Review Jaar 2 PB", type: "Seminar", start: 11, end: 12.75, location: "SP G2.10", note: "" },
   { id: "5102LEGE9Y-2026-10-28-1100-67", date: "2026-10-28", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Lecture", start: 11, end: 12.75, location: "SP H0.08", note: "" },
   { id: "5102LEGE9Y-2026-10-29-1300-68", date: "2026-10-29", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Lecture", start: 13, end: 14.75, location: "SP L1.02", note: "" },
   { id: "5102LEGE9Y-2026-10-30-1100-69", date: "2026-10-30", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Lecture", start: 11, end: 12.75, location: "SP H0.08", note: "" },
@@ -91,7 +94,7 @@ export const UNI_SESSIONS: UniSession[] = [
   { id: "5102LEGE9Y-2026-11-16-1300-85", date: "2026-11-16", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Computer lab session", start: 13, end: 14.75, location: "SP B0.204", note: "Inhaalwerkgroep" },
   { id: "5102LEGE9Y-2026-11-16-1500-86", date: "2026-11-16", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Seminar", start: 15, end: 16.75, location: "SP C1.110", note: "Recap" },
   { id: "5122LIAL6Y-2026-11-17-1500-87", date: "2026-11-17", courseCode: "5122LIAL6Y", courseName: "Lineaire algebra", type: "Lecture", start: 15, end: 16.75, location: "SP C0.110", note: "" },
-  { id: "5102LEGE9Y-2026-11-19-1330-88", date: "2026-11-19", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Computer-based interim test", start: 13.5, end: 15, location: "IWO 4.04A (Rood)", note: "" },
+  { id: "5102LEGE9Y-2026-11-19-1330-88", date: "2026-11-19", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Computer-based interim test", start: 13.5, end: 15, location: "IWO 4.04A (Rood)", note: "Optional" },
   { id: "5122LIAL6Y-2026-11-20-1300-89", date: "2026-11-20", courseCode: "5122LIAL6Y", courseName: "Lineaire algebra", type: "Seminar", start: 13, end: 14.75, location: "SP G5.29", note: "" },
   { id: "5102LEGE9Y-2026-11-23-1500-90", date: "2026-11-23", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Lecture", start: 15, end: 16.75, location: "SP C1.110", note: "" },
   { id: "5102LEGE9Y-2026-11-24-1100-91", date: "2026-11-24", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Lecture", start: 11, end: 12.75, location: "SP C1.110", note: "" },
@@ -99,7 +102,6 @@ export const UNI_SESSIONS: UniSession[] = [
   { id: "5102LEGE9Y-2026-11-25-1100-93", date: "2026-11-25", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Lecture", start: 11, end: 12.75, location: "SP H0.08", note: "" },
   { id: "5122LIAL6Y-2026-11-27-1300-94", date: "2026-11-27", courseCode: "5122LIAL6Y", courseName: "Lineaire algebra", type: "Seminar", start: 13, end: 14.75, location: "SP G5.29", note: "" },
   { id: "5102LEGE9Y-2026-11-27-1500-95", date: "2026-11-27", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Seminar", start: 15, end: 16.75, location: "SP C1.110", note: "Experiment" },
-  { id: "5102LEGE9Y-2026-11-27-1500-96", date: "2026-11-27", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Seminar", start: 15, end: 16.75, location: "SP A1.16, SP C1.112", note: "Experiment" },
   { id: "5102LEGE9Y-2026-11-30-1500-97", date: "2026-11-30", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Lecture", start: 15, end: 16.75, location: "SP C1.110", note: "" },
   { id: "5122LIAL6Y-2026-12-01-1500-98", date: "2026-12-01", courseCode: "5122LIAL6Y", courseName: "Lineaire algebra", type: "Lecture", start: 15, end: 16.75, location: "SP C0.110", note: "" },
   { id: "5102LEGE9Y-2026-12-02-1100-99", date: "2026-12-02", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Lecture", start: 11, end: 12.75, location: "SP H0.08", note: "" },
@@ -117,8 +119,8 @@ export const UNI_SESSIONS: UniSession[] = [
   { id: "5102LEGE9Y-2026-12-14-1100-111", date: "2026-12-14", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Seminar", start: 11, end: 12.75, location: "SP G0.05", note: "inhaalmoment experiment" },
   { id: "5102LEGE9Y-2026-12-14-1300-112", date: "2026-12-14", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Computer lab session", start: 13, end: 14.75, location: "SP B0.204", note: "Inhaalwerkgroep" },
   { id: "5102LEGE9Y-2026-12-14-1500-113", date: "2026-12-14", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Seminar", start: 15, end: 16.75, location: "SP C1.110", note: "Recap" },
-  { id: "5102LEGE9Y-2026-12-16-1200-114", date: "2026-12-16", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Computer-based examination", start: 12, end: 13.5, location: "World Fashion Center Westhal", note: "" },
-  { id: "5122LIAL6Y-2026-12-16-1330-115", date: "2026-12-16", courseCode: "5122LIAL6Y", courseName: "Lineaire algebra", type: "Examination", start: 13.5, end: 16.5, location: "USC Universum Sporthal 2", note: "" },
+  { id: "5102LEGE9Y-2026-12-16-1200-114", date: "2026-12-16", courseCode: "5102LEGE9Y", courseName: "Leren en Geheugen", type: "Computer-based examination", start: 12, end: 13.5, location: "World Fashion Center Westhal", note: "Lineaire Algebra exam starts 13:30 at USC Universum, no travel time" },
+  { id: "5122LIAL6Y-2026-12-16-1330-115", date: "2026-12-16", courseCode: "5122LIAL6Y", courseName: "Lineaire algebra", type: "Examination", start: 13.5, end: 16.5, location: "USC Universum Sporthal 2", note: "Straight from Leren en Geheugen at World Fashion Center, no travel time" },
   { id: "5102PETB6Y-2027-01-04-1300-116", date: "2027-01-04", courseCode: "5102PETB6Y", courseName: "Van Perceptie tot Bewustzijn", type: "Computer-based resit", start: 13, end: 15, location: "IWO 4.04C (Blauw)", note: "" },
   { id: "5102WSRP6Y-2027-01-05-1800-117", date: "2027-01-05", courseCode: "5102WSRP6Y", courseName: "Wetenschapsfilosofie en Statistisch Redeneren", type: "Computer-based resit", start: 18, end: 20, location: "IWO 4.04A (Rood)", note: "" },
   { id: "5102MIEN6Y-2027-01-11-0900-118", date: "2027-01-11", courseCode: "5102MIEN6Y", courseName: "Review Jaar 2 PB", type: "Presentation", start: 9, end: 10.75, location: "SP D1.114", note: "" },

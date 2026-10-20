@@ -164,7 +164,7 @@ model RoutineItem {
   user      User     @relation(fields: [userId], references: [id])
   mode      String // "prep" | "normal"
   key       String // stable id, e.g. "posing"; custom items get "custom-<cuid>"
-  area      String // "anchors" | "body" | "fuel" | "mind" | "content" | "life"
+  area      String // "anchors" | "body" | "fuel" | "mind" | "content" | "work" | "life"
   kind      String // block-kind colour key, see lib/schedule/colors.ts
   label     String
   hint      String   @default("")
