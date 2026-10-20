@@ -9,6 +9,7 @@ export const AREAS: { key: Area; label: string; kind: BlockKind }[] = [
   { key: "fuel", label: "Fuel", kind: "meal" },
   { key: "mind", label: "Study & reading", kind: "study" },
   { key: "content", label: "Content", kind: "content" },
+  { key: "work", label: "Work", kind: "work" },
   { key: "life", label: "Home", kind: "chores" },
 ];
 

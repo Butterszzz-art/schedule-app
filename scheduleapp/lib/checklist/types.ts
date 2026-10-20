@@ -1,6 +1,6 @@
 import type { BlockKind } from "@/lib/schedule/types";
 
-export type Area = "anchors" | "body" | "uni" | "fuel" | "mind" | "content" | "life";
+export type Area = "anchors" | "body" | "uni" | "fuel" | "mind" | "content" | "work" | "life";
 export type ItemType = "check" | "count" | "chunks";
 
 /** One line of the daily routine, as defined in code or stored in RoutineItem. */

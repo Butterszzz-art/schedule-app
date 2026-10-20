@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { availabilityForDate, lateThenEarlyClashes } from "@/lib/checklist/availability";
 import {
   formatHours,
   shiftHours,
@@ -34,16 +35,20 @@ export function ShiftCard({
   const [error, setError] = useState<string | null>(null);
 
   const week = totalHours(shifts);
+  const avail = availabilityForDate(date);
+  const clashes = lateThenEarlyClashes(shifts);
+  const logged = (slot: { start: string; end: string }) =>
+    shifts.some((s) => s.date === date && s.start === slot.start && s.end === slot.end);
   const left = Math.max(0, SHIFT_TARGET_LOW - week);
 
-  const add = async () => {
-    if (start === end) {
+  const add = async (from = start, to = end) => {
+    if (from === to) {
       setError("Start and end can't be the same time.");
       return;
     }
     setError(null);
     setBusy(true);
-    const ok = await onAdd({ date, start, end, note: "" });
+    const ok = await onAdd({ date, start: from, end: to, note: "" });
     setBusy(false);
     if (!ok) setError("Couldn't save that shift. Check your connection and try again.");
   };
@@ -77,6 +82,38 @@ export function ShiftCard({
             : `In your ${SHIFT_TARGET_LOW}–${SHIFT_TARGET_HIGH}h range`}
       </p>
 
+      {avail.kind !== "none" && (
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-foreground/60">
+          <span>AH availability {dayLabel}:</span>
+          {avail.kind === "away" ? (
+            <span className="font-semibold">{avail.reason}</span>
+          ) : avail.slots.length === 0 ? (
+            <span className="font-semibold">Not available{avail.note ? ` (${avail.note})` : ""}</span>
+          ) : (
+            avail.slots.map((slot) => (
+              <button
+                key={slot.start}
+                type="button"
+                disabled={busy || logged(slot)}
+                onClick={() => add(slot.start, slot.end)}
+                aria-label={`Log shift ${slot.start} to ${slot.end}`}
+                className="min-h-9 rounded-full border px-3 font-semibold tabular-nums disabled:opacity-40"
+                style={{ borderColor: `${accent}66`, color: accent }}
+              >
+                {logged(slot) ? "✓ " : "+ "}
+                {slot.start}–{slot.end}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+
+      {clashes.length > 0 && (
+        <p role="alert" className="rounded-lg bg-[#FCA5A5]/10 px-3 py-2 text-xs text-[#FCA5A5]">
+          Late Friday shift followed by a 07:00 Saturday shift: that breaks the 8 h sleep rule. Drop one of them.
+        </p>
+      )}
+
       {shifts.length > 0 && (
         <ul className="flex flex-col gap-1.5">
           {shifts.map((s) => (
@@ -108,7 +145,7 @@ export function ShiftCard({
         className="flex flex-wrap items-end gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          add();
+          add(start, end);
         }}
       >
         <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] text-foreground/50">

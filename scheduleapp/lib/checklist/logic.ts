@@ -4,6 +4,7 @@ import type { UniSession } from "@/lib/schedule/types";
 import { addDays, formatHM } from "@/lib/time";
 import { AREA_KEYS } from "./areas";
 import { fraction } from "./progress";
+import { studyPlanItemsForDate } from "./studyplan";
 import type { ChecklistItem, DayValues, RoutineItemDTO } from "./types";
 
 // Pure checklist logic -- no DB, no React -- so it's easy to unit test.
@@ -14,12 +15,19 @@ import type { ChecklistItem, DayValues, RoutineItemDTO } from "./types";
 // question hours only show up from 13:00 on (earlier ones are skipped).
 const OPTIONAL_UNI_TYPES = ["Lecture", "Question session"];
 
+// Courses where every session is on the list, whatever its type or time
+// (Review Jaar 2 PB: the 09:00 kick-off lecture counts).
+const ALWAYS_ATTEND_COURSES = ["5102MIEN6Y"];
+
 const ASSESSMENT = /exam|test|resit|presentation/i;
 const RESIT = /resit/i;
 
-export function attendsSession(s: Pick<UniSession, "type" | "start">): boolean {
+export function attendsSession(
+  s: Pick<UniSession, "type" | "start"> & Partial<Pick<UniSession, "courseCode">>
+): boolean {
   // Resits only matter if you need them; they show under "Coming up" instead.
   if (RESIT.test(s.type)) return false;
+  if (s.courseCode && ALWAYS_ATTEND_COURSES.includes(s.courseCode)) return true;
   return s.start >= 13 || !OPTIONAL_UNI_TYPES.includes(s.type);
 }
 
@@ -31,6 +39,7 @@ export interface Assessment {
   start: number;
   location: string;
   resit: boolean;
+  note: string;
 }
 
 /**
@@ -55,6 +64,7 @@ export function upcomingAssessments(
       start: s.start,
       location: s.location,
       resit: RESIT.test(s.type),
+      note: s.note,
     }));
 }
 
@@ -82,7 +92,7 @@ export function uniItemsForDate(
 /**
  * Everything on the list for `date`: the routine items scheduled for that
  * weekday (pass the routine for that date's schedule mode), plus that
- * day's uni sessions. Sorted by area, then routine order.
+ * day's uni sessions and any dated study-plan blocks. Sorted by area, then routine order.
  */
 export function itemsForDate(
   routine: RoutineItemDTO[],
@@ -107,7 +117,7 @@ export function itemsForDate(
       chunks: r.chunks,
     }));
   // Array.sort is stable, so this keeps routine order within each area.
-  return [...fromRoutine, ...uniItemsForDate(date, sessions)].sort(
+  return [...fromRoutine, ...uniItemsForDate(date, sessions), ...studyPlanItemsForDate(date)].sort(
     (a, b) => AREA_KEYS.indexOf(a.area) - AREA_KEYS.indexOf(b.area)
   );
 }

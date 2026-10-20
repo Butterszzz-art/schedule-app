@@ -30,6 +30,7 @@ export function ComingUp({ today, assessments }: { today: string; assessments: A
                   {a.type} · {new Date(`${a.date}T00:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })} {formatHM(a.start)}
                   {a.location ? ` · ${a.location}` : ""}
                 </span>
+                {a.note && <span className="text-xs text-foreground/50">{a.note}</span>}
               </div>
             </li>
           );

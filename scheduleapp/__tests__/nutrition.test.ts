@@ -20,22 +20,9 @@ describe("getDayType", () => {
 });
 
 describe("NUTRITION_TARGETS", () => {
-  it("always shows 164g protein regardless of day type", () => {
+  it("is a flat 1750 kcal on every day type during prep", () => {
     for (const target of Object.values(NUTRITION_TARGETS)) {
-      expect(target.protein).toBe(164);
+      expect(target).toMatchObject({ calories: 1750, protein: 160, carbs: 155, fat: 45 });
     }
-  });
-
-  it("matches the v5 blueprint numbers (prep-blueprint-v5.html)", () => {
-    expect(NUTRITION_TARGETS.training).toMatchObject({
-      calories: 2400,
-      carbs: 246,
-      fat: 69,
-    });
-    expect(NUTRITION_TARGETS.rest).toMatchObject({
-      calories: 2240,
-      carbs: 196,
-      fat: 89,
-    });
   });
 });

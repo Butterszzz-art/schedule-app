@@ -3,7 +3,19 @@
 ## What this is
 A personal mobile-first daily checklist app for a natural classic physique bodybuilder-student. Built to replace a static PDF schedule with a live, interactive system.
 
-**Changed 2026-10-09: no more timed schedule.** A strict schedule didn't work, so the app is now a flexible daily checklist: each day lists what needs doing (grouped by area: Anchors, Training, Uni, Fuel, Study & reading, Content, Home), ticked off in any order. The only times left are the two sleep anchors ("Up by 06:30" / "Lights out 22:30" in prep), which are checklist items. Tabs: **Today · Week · Routine · Prep**. Habits, Log and Tasks tabs were removed (the checklist + Week grid replace them). The day/mode rules below still decide *which* items show up on *which* days; the clock times in them are historical context, not something the app enforces. Side job: 12–16 h/week, tracked as shifts (start–end times) in the Side job card on Today, with a weekly total against the target. Untimed tasks: "Also today" (one day) and "This week" (any day that week); unfinished ones roll over. Today also shows a "Coming up at uni" card with exams/tests/presentations from the timetable in the next 3 weeks (the timetable has no homework deadlines — those live in Canvas, which the app can't see). The user is preparing for two shows in Oct/Nov 2026 while studying Psychology at UvA (Science Park, Amsterdam) and living on Zeeburgeiland.
+**Changed 2026-10-09: no more timed schedule.** A strict schedule didn't work, so the app is now a flexible daily checklist: each day lists what needs doing (grouped by area: Anchors, Training, Uni, Fuel, Study & reading, Content, Home), ticked off in any order. The only times left are the two sleep anchors ("Up by 06:30" / "Lights out 22:30" in prep), which are checklist items. Tabs: **Today · Week · Routine · Prep**. Habits, Log and Tasks tabs were removed (the checklist + Week grid replace them). The day/mode rules below still decide *which* items show up on *which* days; the clock times in them are historical context, not something the app enforces. Side job: 12–16 h/week, tracked as shifts (start–end times) in the Side job card on Today, with a weekly total against the target. Untimed tasks: "Also today" (one day) and "This week" (any day that week); unfinished ones roll over. Today also shows a "Coming up at uni" card with exams/tests/presentations from the timetable in the next 3 weeks (the timetable has no homework deadlines — those live in Canvas, which the app can't see). 
+
+**Changed 2026-10-20: schedule update (applies from Tue Oct 20).**
+- Sleep: normal days up 05:45 / lights out 21:45 (8 h). On a day with a 19:00–22:30 AH shift: lights out 23:00, up 07:00 (that day and the morning after), gym after 08:00. Never a Fri late shift + Sat 07:00 shift (the Side job card warns). Worked out from logged shifts in `lib/checklist/dayplan.ts`.
+- Meals: 4 meals + 1 snack; only M3/M4 (and snack) move with shifts; times shown in the Meals item hint (`dayplan.ts`).
+- Gym 06:00 on normal days; Saturday with a 07–10 shift: after the shift. Posing now after the gym.
+- Nutrition (prep): flat **1750 kcal** every day; macros are a rough goal only (~160 P / ~155 C / ~45 F; the user tracks exact numbers in another app). Revisit after Show 2 (a Nov 2 reminder task exists). Supersedes the 2400/2240 table below.
+- Albert Heijn availability windows (not confirmed shifts) in `lib/checklist/availability.ts`, shown in the Side job card with one-tap logging. Away Oct 28 – Nov 7.
+- PT clients (online): check-ins Mon + Thu evening, programming Sun (routine items, area "work").
+- Review Jaar 2 PB self-study plan (dated, `lib/checklist/studyplan.ts`): ~12 h/wk Nov 9–Dec 6, ~4 h/wk Dec 7–15, 50–60 h Dec 17–Jan 10. Every Review Jaar 2 PB session shows, even before 13:00.
+- Honours dropped (none were in the timetable). Known clash: Dec 16 Leren en Geheugen (World Fashion Center, ends 13:30) → Lineaire Algebra (USC Universum, starts 13:30), no travel time.
+
+The user is preparing for two shows in Oct/Nov 2026 while studying Psychology at UvA (Science Park, Amsterdam) and living on Zeeburgeiland.
 
 ## Tech stack
 - Next.js 14 (App Router)
@@ -77,8 +89,8 @@ Key differences from normal:
 2. **Gym 07:30–09:00** on lifting days in PREP mode, all days incl. Sat (retimed 2026-08-30, was 06:00–07:30 / Sat 06:30–08:00). NORMAL mode keeps the original **06:00–07:30** (Sat 06:30–08:00).
 3. **Mobility 20 min** immediately after gym, before leaving
 4. **Wake/sleep**: PREP mode 06:30 / 22:30 (retimed 2026-08-30, was 05:30/21:45). NORMAL mode still 05:30 / 21:45 — the retime wasn't applied there. Both are 8 hours non-negotiable.
-5. **Protein 164g every day** regardless of calorie level
-6. **Posing practice 06:30 daily** — PREP MODE only. Fasted. ~20 min. (was 05:30/~25 min before the 2026-08-30 retime)
+5. **Protein ~160 g every day** (rough goal; was 164 g before 2026-10-20)
+6. **Posing practice daily, after the gym** — PREP MODE only. ~20 min. (was fasted 06:30 before 2026-10-20)
 7. **Study blocks are descending in length**: 2h → 1.5h → (1h on full free days) with short breaks between. Never stack two long blocks without a break.
 8. **Lectures before 13:00 are skipped** — only attend mandatory sessions and anything starting ≥ 13:00
 
@@ -147,6 +159,9 @@ lib/
     logic.ts    ← items for a date (routine + uni), week grid
     progress.ts ← per-item progress, day/week task roll-over, day score
     shifts.ts   ← side-job shift hours + weekly target
+    availability.ts ← AH availability windows + Fri-late/Sat-early check
+    dayplan.ts  ← sleep/meal/gym times from that day's shifts
+    studyplan.ts ← dated Review self-study blocks
     server.ts   ← DB loading + routine seeding
   schedule/
     mode.ts     ← getScheduleMode(), isPrep()

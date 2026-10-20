@@ -28,24 +28,19 @@ export interface NutritionTarget {
   fat: number;
 }
 
-// From the prep blueprint v5 (prep-blueprint-v5.html, 2026-08-24 correction
-// of the v4 PDF). Protein is always 164g; only carbs/fat swing by day type.
+// Prep target from 2026-10-20 until the shows: a flat 1750 kcal every day.
+// Macros are a rough goal only (exact numbers are tracked in another app):
+// 4 meals of ~34 P / 36 C / 11 F plus a ~230 g plain skyr snack (~25 P / 9 C).
+// Revisit after Show 2 (Nov 1). Previous v5 blueprint split was
+// 2400 kcal training / 2240 kcal rest, 164 g protein.
+const PREP_TARGET = { calories: 1750, protein: 160, carbs: 155, fat: 45 };
+
 export const NUTRITION_TARGETS: Record<NutritionDayType, NutritionTarget> = {
-  training: {
-    label: "TRAINING DAY",
-    calories: 2400,
-    protein: 164,
-    carbs: 246,
-    fat: 69,
-  },
-  rest: {
-    label: "REST DAY",
-    calories: 2240,
-    protein: 164,
-    carbs: 196,
-    fat: 89,
-  },
+  training: { label: "TRAINING DAY", ...PREP_TARGET },
+  rest: { label: "REST DAY", ...PREP_TARGET },
 };
 
-// (5 training days + 2 rest days) / 7, per lib/schedule/days.ts's dayType().
-export const WEEKLY_AVERAGE_CALORIES = 2354;
+export const WEEKLY_AVERAGE_CALORIES = 1750;
+
+/** Rough per-meal split, shown as a guide (not a strict target). */
+export const MEAL_GUIDE = "Each meal ~34 P / 36 C / 11 F · snack ~230 g plain AH skyr (~25 P / 9 C)";
