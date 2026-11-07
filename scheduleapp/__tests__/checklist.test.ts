@@ -6,7 +6,10 @@ import {
   itemsForDate,
   uniItemsForDate,
   upcomingAssessments,
+  weeklyTargets,
 } from "@/lib/checklist/logic";
+import { goalFraction } from "@/lib/checklist/goals";
+import { monthKey } from "@/lib/time";
 import {
   dayScore,
   extrasForDate,
@@ -225,13 +228,35 @@ describe("buildWeekRows", () => {
     expect(rows.filter((r) => r.kind === "gym")).toHaveLength(1);
   });
 
-  it("shows a skip cell instead of a miss when the day's item was excused", () => {
+  it("shows an owed cell, not a miss, while the week it was skipped in is still open", () => {
     const dates = [MON, TUE];
     const itemsByDate = Object.fromEntries(dates.map((d) => [d, itemsForDate(routine("prep"), d, [])]));
     const valuesByDate = Object.fromEntries(dates.map((d) => [d, {}])) as Record<string, Record<string, number>>;
     valuesByDate[MON] = { "gym-upper": SKIPPED };
     const rows = buildWeekRows(dates, itemsByDate, valuesByDate, TUE);
-    expect(rows.find((r) => r.key === "gym")!.cells[0]).toBe("skip");
+    expect(rows.find((r) => r.key === "gym")!.cells[0]).toBe("owed");
+  });
+
+  it("turns an unresolved owed cell into a miss once that week has ended", () => {
+    const dates = [MON, TUE];
+    const itemsByDate = Object.fromEntries(dates.map((d) => [d, itemsForDate(routine("prep"), d, [])]));
+    const valuesByDate = Object.fromEntries(dates.map((d) => [d, {}])) as Record<string, Record<string, number>>;
+    valuesByDate[MON] = { "gym-upper": SKIPPED };
+    const rows = buildWeekRows(dates, itemsByDate, valuesByDate, WED);
+    expect(rows.find((r) => r.key === "gym")!.cells[0]).toBe("miss");
+  });
+});
+
+describe("weeklyTargets", () => {
+  it("derives the target from scheduled days and counts owed separately from done", () => {
+    const dates = [MON, TUE, WED, "2026-10-08", FRI, SAT, SUN];
+    const itemsByDate = Object.fromEntries(dates.map((d) => [d, itemsForDate(routine("prep"), d, [])]));
+    const valuesByDate = Object.fromEntries(dates.map((d) => [d, {}])) as Record<string, Record<string, number>>;
+    valuesByDate[MON] = { "gym-upper": 1 };
+    valuesByDate[TUE] = { "gym-lower": SKIPPED };
+    const rows = buildWeekRows(dates, itemsByDate, valuesByDate, WED);
+    const gym = weeklyTargets(rows).find((t) => t.key === "gym")!;
+    expect(gym).toEqual(expect.objectContaining({ target: 5, done: 1, owed: 1 }));
   });
 });
 
@@ -259,6 +284,25 @@ describe("weekTasksFor", () => {
 
   it("does not carry tasks into a past week", () => {
     expect(weekTasksFor(tasks, LAST_MON, MON).map((x) => x.id)).toEqual(["old"]);
+  });
+});
+
+describe("monthKey", () => {
+  it("takes the calendar month off an ISO date", () => {
+    expect(monthKey("2026-11-07")).toBe("2026-11");
+    expect(monthKey(MON)).toBe("2026-10");
+  });
+});
+
+describe("goalFraction", () => {
+  it("is a plain 0/1 for a target-1 milestone", () => {
+    expect(goalFraction({ target: 1, progress: 0 })).toBe(0);
+    expect(goalFraction({ target: 1, progress: 1 })).toBe(1);
+  });
+
+  it("is a ratio for a counted goal, clamped to 1", () => {
+    expect(goalFraction({ target: 4, progress: 1 })).toBe(0.25);
+    expect(goalFraction({ target: 4, progress: 10 })).toBe(1);
   });
 });
 

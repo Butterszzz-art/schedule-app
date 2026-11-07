@@ -25,6 +25,7 @@ model User {
   extraTasks      ExtraTask[]
   workLogs        WorkLog[]
   workShifts      WorkShift[]
+  goals           Goal[]
 }
 
 model UserSettings {
@@ -213,6 +214,26 @@ model ExtraTask {
 
   @@index([userId, date])
   @@index([userId, doneOn])
+}
+
+// A custom weekly or monthly goal, separate from the routine-derived
+// weekly targets (lib/checklist/goals.ts), which are computed from
+// RoutineItem.days rather than stored. scope "week": period is an ISO
+// week key ("2026-W45"). scope "month": period is a calendar month key
+// ("2026-11"). Ticked up to `target` (default 1, i.e. a plain milestone).
+model Goal {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  scope     String // "week" | "month"
+  period    String
+  title     String
+  target    Int      @default(1)
+  progress  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, scope, period])
 }
 
 // LEGACY: per-day side-job hours, replaced by WorkShift on 2026-10-10.

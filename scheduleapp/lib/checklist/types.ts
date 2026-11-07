@@ -43,5 +43,17 @@ export interface ShiftDTO {
   note: string;
 }
 
+export type GoalScope = "week" | "month";
+
+/** A custom goal for one ISO week or one calendar month, ticked up to `target`. */
+export interface GoalDTO {
+  id: string;
+  scope: GoalScope;
+  period: string; // isoWeekKey() for "week", monthKey() for "month"
+  title: string;
+  target: number;
+  progress: number;
+}
+
 /** checklist values for one date, keyed by item key. */
 export type DayValues = Record<string, number>;

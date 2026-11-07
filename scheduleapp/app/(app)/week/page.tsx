@@ -1,20 +1,25 @@
 import { Header } from "@/components/layout/Header";
+import { GoalsSection } from "@/components/checklist/GoalsSection";
+import { WeeklyTargets } from "@/components/checklist/WeeklyTargets";
 import { auth } from "@/lib/auth";
-import { buildWeekRows, type CellState } from "@/lib/checklist/logic";
+import { buildWeekRows, weeklyTargets, type CellState } from "@/lib/checklist/logic";
 import { dayScore, extrasForDate, weekTasksFor } from "@/lib/checklist/progress";
+import { getGoals, loadWeek } from "@/lib/checklist/server";
 import { formatHours, shiftHours, SHIFT_TARGET_HIGH, SHIFT_TARGET_LOW, totalHours } from "@/lib/checklist/shifts";
-import { loadWeek } from "@/lib/checklist/server";
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
 import { DAYS } from "@/lib/schedule/days";
-import { startOfIsoWeek, todayISODate } from "@/lib/time";
+import { isoWeekKey, monthKey, startOfIsoWeek, todayISODate } from "@/lib/time";
 
 function Cell({ state, accent }: { state: CellState; accent: string }) {
   if (state === "none") return <span className="inline-block h-1 w-1 rounded-full bg-[#222]" />;
-  if (state === "skip") {
+  if (state === "owed") {
     return (
-      <span role="img" aria-label="Skipped" className="inline-block h-3.5 w-3.5 align-middle text-center text-[11px] leading-[14px] text-foreground/30">
-        –
-      </span>
+      <span
+        role="img"
+        aria-label="Owed, still catchable this week"
+        className="inline-block h-3.5 w-3.5 rounded-full align-middle"
+        style={{ border: "1.5px dashed #FB923C" }}
+      />
     );
   }
   const style =
@@ -32,8 +37,15 @@ export default async function WeekPage() {
   const userId = session!.user.id;
 
   const today = todayISODate();
-  const week = await loadWeek(userId, startOfIsoWeek(today));
+  const monday = startOfIsoWeek(today);
+  const [week, goals] = await Promise.all([
+    loadWeek(userId, monday),
+    getGoals(userId, isoWeekKey(today), monthKey(today)),
+  ]);
   const rows = buildWeekRows(week.dates, week.itemsByDate, week.valuesByDate, today);
+  const targets = weeklyTargets(rows);
+  const weekGoals = goals.filter((g) => g.scope === "week");
+  const monthGoals = goals.filter((g) => g.scope === "month");
   const weekTasks = weekTasksFor(week.extras, week.dates[0], week.dates[0]);
   const hoursByDate = (date: string) =>
     week.shifts.filter((s) => s.date === date).reduce((sum, s) => sum + shiftHours(s.start, s.end), 0);
@@ -123,13 +135,31 @@ export default async function WeekPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3.5 text-xs text-foreground/50">
-          {(["full", "half", "miss", "due", "skip"] as const).map((s) => (
+          {(["full", "half", "miss", "due", "owed"] as const).map((s) => (
             <span key={s} className="inline-flex items-center gap-1.5">
               <Cell state={s} accent="#C8F060" />
-              {{ full: "Done", half: "Partly", miss: "Missed", due: "Still to do", skip: "Skipped" }[s]}
+              {{ full: "Done", half: "Partly", miss: "Missed", due: "Still to do", owed: "Owed (catch up)" }[s]}
             </span>
           ))}
         </div>
+
+        <WeeklyTargets targets={targets} />
+
+        <GoalsSection
+          title="Weekly goals"
+          scope="week"
+          period={isoWeekKey(today)}
+          placeholder="Add a goal for this week…"
+          initialGoals={weekGoals}
+        />
+
+        <GoalsSection
+          title="This month's goals"
+          scope="month"
+          period={monthKey(today)}
+          placeholder="Add a goal for this month…"
+          initialGoals={monthGoals}
+        />
       </main>
     </>
   );

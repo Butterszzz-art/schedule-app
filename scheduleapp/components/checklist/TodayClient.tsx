@@ -9,6 +9,7 @@ import {
   dayScore,
   extrasForDate,
   fraction,
+  fullValue,
   isSkipped,
   weekTasksFor,
   type ExtraView,
@@ -17,6 +18,7 @@ import type { ChecklistItem, DayValues, ExtraDTO, ExtraScope, ShiftDTO } from "@
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
 import { DAYS, dayType, dayKeyForDate } from "@/lib/schedule/days";
 import type { ScheduleMode } from "@/lib/schedule/types";
+import { CatchUpSection } from "./CatchUpSection";
 import { ChecklistRow } from "./ChecklistRow";
 import { ShiftCard } from "./ShiftCard";
 import { TaskSection } from "./TaskSection";
@@ -84,6 +86,17 @@ export function TodayClient({
   const { done, total } = dayScore(items, dayValues, dayExtras);
   const nutrition = nutritionByDate[sel];
   const isLowerDay = dayType(dayKeyForDate(sel)) === "lower";
+
+  // Items skipped on an earlier day this week that are still owed -- see
+  // the "owed" cell state in lib/checklist/logic.ts. Completing one here
+  // marks it done on the day it was originally scheduled, not today.
+  const catchUps = dates
+    .filter((d) => d < today)
+    .flatMap((d) =>
+      (itemsByDate[d] ?? [])
+        .filter((item) => isSkipped(values[d]?.[item.key]))
+        .map((item) => ({ date: d, item }))
+    );
 
   const setValue = async (date: string, key: string, value: number) => {
     const prev = values[date]?.[key] ?? 0;
@@ -252,6 +265,12 @@ export function TodayClient({
         </div>
 
         {comingUp}
+
+        <CatchUpSection
+          items={catchUps}
+          dayLabel={shortDate}
+          onComplete={(date, item) => setValue(date, item.key, fullValue(item))}
+        />
 
         {AREAS.map((area) => {
           const list = items.filter((i) => i.area === area.key);
