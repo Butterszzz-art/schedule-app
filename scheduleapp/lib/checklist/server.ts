@@ -9,6 +9,8 @@ import type {
   ChecklistItem,
   DayValues,
   ExtraDTO,
+  GoalDTO,
+  GoalScope,
   ItemType,
   RoutineItemDTO,
   ShiftDTO,
@@ -120,4 +122,30 @@ export async function loadWeek(userId: string, monday: string): Promise<WeekData
     })),
     shifts: shifts.map((s) => ({ id: s.id, date: s.date, start: s.start, end: s.end, note: s.note })),
   };
+}
+
+/** Custom goals for the current ISO week and the current calendar month. */
+export async function getGoals(
+  userId: string,
+  weekPeriod: string,
+  monthPeriod: string
+): Promise<GoalDTO[]> {
+  const rows = await prisma.goal.findMany({
+    where: {
+      userId,
+      OR: [
+        { scope: "week", period: weekPeriod },
+        { scope: "month", period: monthPeriod },
+      ],
+    },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map((g) => ({
+    id: g.id,
+    scope: g.scope === "month" ? "month" : ("week" as GoalScope),
+    period: g.period,
+    title: g.title,
+    target: g.target,
+    progress: g.progress,
+  }));
 }

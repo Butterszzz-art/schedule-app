@@ -4,6 +4,17 @@ import type { ChecklistItem, DayValues, ExtraDTO } from "./types";
 // Progress maths for checklist items. Kept free of the uni timetable import
 // so client components can use it cheaply.
 
+// Sentinel stored in place of a real value when an item is excused for the
+// day (something came up) -- distinct from "nothing logged yet" so it can
+// show its own state and drop out of the day's done/total instead of
+// counting as missed. Items in the "anchors" area can't be skipped (see
+// ChecklistRow / areas.ts) -- those are the one non-negotiable left.
+export const SKIPPED = -1;
+
+export function isSkipped(value: number | undefined): boolean {
+  return value === SKIPPED;
+}
+
 /** The value that means "fully done" for an item. */
 export function fullValue(item: Pick<ChecklistItem, "type" | "target" | "chunks">): number {
   if (item.type === "count") return item.target;
@@ -101,7 +112,8 @@ export function dayScore(
   values: DayValues,
   extras: ExtraView[]
 ): { done: number; total: number } {
-  const doneItems = items.filter((i) => fraction(i, values[i.key]) === 1).length;
+  const activeItems = items.filter((i) => !isSkipped(values[i.key]));
+  const doneItems = activeItems.filter((i) => fraction(i, values[i.key]) === 1).length;
   const doneExtras = extras.filter((x) => x.doneOn).length;
-  return { done: doneItems + doneExtras, total: items.length + extras.length };
+  return { done: doneItems + doneExtras, total: activeItems.length + extras.length };
 }

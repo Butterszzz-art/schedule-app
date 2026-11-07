@@ -51,6 +51,11 @@ export function isoWeekKey(isoDate: string): string {
   return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
+/** Calendar month key for a "YYYY-MM-DD" date string, e.g. "2026-11". */
+export function monthKey(isoDate: string): string {
+  return isoDate.slice(0, 7);
+}
+
 export function addDays(isoDate: string, days: number): string {
   const [y, m, d] = isoDate.split("-").map(Number);
   const date = new Date(Date.UTC(y, m - 1, d));

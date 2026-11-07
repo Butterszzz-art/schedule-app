@@ -15,6 +15,10 @@ A personal mobile-first daily checklist app for a natural classic physique bodyb
 - Review Jaar 2 PB self-study plan (dated, `lib/checklist/studyplan.ts`): ~12 h/wk Nov 9–Dec 6, ~4 h/wk Dec 7–15, 50–60 h Dec 17–Jan 10. Every Review Jaar 2 PB session shows, even before 13:00.
 - Honours dropped (none were in the timetable). Known clash: Dec 16 Leren en Geheugen (World Fashion Center, ends 13:30) → Lineaire Algebra (USC Universum, starts 13:30), no travel time.
 
+**Changed 2026-11-07: per-day skip, now a catch-up, plus weekly/monthly goals.** Any checklist item except the sleep anchors (area `"anchors"`) can be marked "Skip" for that one day — something came up. It's excused from *that day's* own done/total (no guilt today), but it does not lower the week's real target: it becomes **owed**, shown in a "Catch up" section on Today (complete it there, any day that week — it's marked done on the day it was originally scheduled) and as a dashed amber cell in the Week grid instead of a flat miss. If the week ends with it still unresolved, it becomes a real miss — total weekly productivity can't be quietly shrunk by skipping, only moved to a different day. Stored as `ChecklistEntry.value = -1` (`SKIPPED` in `lib/checklist/progress.ts`); see `buildWeekRows`/`weeklyTargets` in `lib/checklist/logic.ts`. Doesn't touch the Routine template — skipping is per date, not a recurring change. The sleep anchors stay the one thing that's still non-negotiable.
+
+Week also gained **goals**: a read-only "This week's targets" panel (`weeklyTargets()`, derived straight from each routine item's scheduled days — no separate config) plus custom, user-added **Weekly goals** and **This month's goals** sections (new `Goal` model: `scope` "week"/"month", `title`, a `target` count ticked up to `progress` — 1 for a plain milestone, more for something like "3 client programs"). The point of all of it: the app should maximize hitting weekly/monthly goals and finishing what contributes to them, not just reward emptying today's checklist.
+
 The user is preparing for two shows in Oct/Nov 2026 while studying Psychology at UvA (Science Park, Amsterdam) and living on Zeeburgeiland.
 
 ## Tech stack
@@ -152,17 +156,18 @@ app/
     nutrition/
     settings/   ← push notification opt-in (evening nudge at 20:30)
   api/
-    checklist/ extras/ routine/ shifts/ weight/ push/ cron/ auth/
+    checklist/ extras/ routine/ shifts/ goals/ weight/ push/ cron/ auth/
 lib/
   checklist/
     defaults.ts ← default routine per mode
-    logic.ts    ← items for a date (routine + uni), week grid
-    progress.ts ← per-item progress, day/week task roll-over, day score
+    logic.ts    ← items for a date (routine + uni), week grid, weekly targets
+    progress.ts ← per-item progress (incl. the skip sentinel), day/week task roll-over, day score
+    goals.ts    ← custom goal progress fraction
     shifts.ts   ← side-job shift hours + weekly target
     availability.ts ← AH availability windows + Fri-late/Sat-early check
     dayplan.ts  ← sleep/meal/gym times from that day's shifts
     studyplan.ts ← dated Review self-study blocks
-    server.ts   ← DB loading + routine seeding
+    server.ts   ← DB loading + routine seeding + goal loading
   schedule/
     mode.ts     ← getScheduleMode(), isPrep()
     days.ts     ← dayType(), dayKeyForDate()
@@ -175,7 +180,7 @@ prisma/
 
 ## What lives in DB vs code
 - **Code**: default routines for both modes, uni timetable, mode detection, nutrition + prep data
-- **DB**: routine items (editable copy of the defaults), checklist progress per day, day/week tasks, side-job shifts, weight entries, push subscriptions. Mode is computed from date (not stored).
+- **DB**: routine items (editable copy of the defaults), checklist progress per day, day/week tasks, side-job shifts, custom weekly/monthly goals, weight entries, push subscriptions. Mode is computed from date (not stored).
 
 ## Phase completion order
 1. Scaffold

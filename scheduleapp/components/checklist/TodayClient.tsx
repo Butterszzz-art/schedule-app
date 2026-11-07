@@ -9,6 +9,8 @@ import {
   dayScore,
   extrasForDate,
   fraction,
+  fullValue,
+  isSkipped,
   weekTasksFor,
   type ExtraView,
 } from "@/lib/checklist/progress";
@@ -16,6 +18,7 @@ import type { ChecklistItem, DayValues, ExtraDTO, ExtraScope, ShiftDTO } from "@
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
 import { DAYS, dayType, dayKeyForDate } from "@/lib/schedule/days";
 import type { ScheduleMode } from "@/lib/schedule/types";
+import { CatchUpSection } from "./CatchUpSection";
 import { ChecklistRow } from "./ChecklistRow";
 import { ShiftCard } from "./ShiftCard";
 import { TaskSection } from "./TaskSection";
@@ -83,6 +86,17 @@ export function TodayClient({
   const { done, total } = dayScore(items, dayValues, dayExtras);
   const nutrition = nutritionByDate[sel];
   const isLowerDay = dayType(dayKeyForDate(sel)) === "lower";
+
+  // Items skipped on an earlier day this week that are still owed -- see
+  // the "owed" cell state in lib/checklist/logic.ts. Completing one here
+  // marks it done on the day it was originally scheduled, not today.
+  const catchUps = dates
+    .filter((d) => d < today)
+    .flatMap((d) =>
+      (itemsByDate[d] ?? [])
+        .filter((item) => isSkipped(values[d]?.[item.key]))
+        .map((item) => ({ date: d, item }))
+    );
 
   const setValue = async (date: string, key: string, value: number) => {
     const prev = values[date]?.[key] ?? 0;
@@ -160,7 +174,9 @@ export function TodayClient({
     ...AREAS.map((a) => ({
       key: a.key,
       color: BLOCK_COLORS[a.kind].accent,
-      fractions: items.filter((i) => i.area === a.key).map((i) => fraction(i, dayValues[i.key])),
+      fractions: items
+        .filter((i) => i.area === a.key && !isSkipped(dayValues[i.key]))
+        .map((i) => fraction(i, dayValues[i.key])),
     })),
     { key: "extra", color: BLOCK_COLORS.free.accent, fractions: dayExtras.map((x) => (x.doneOn ? 1 : 0)) },
   ].filter((s) => s.fractions.length > 0);
@@ -250,10 +266,17 @@ export function TodayClient({
 
         {comingUp}
 
+        <CatchUpSection
+          items={catchUps}
+          dayLabel={shortDate}
+          onComplete={(date, item) => setValue(date, item.key, fullValue(item))}
+        />
+
         {AREAS.map((area) => {
           const list = items.filter((i) => i.area === area.key);
           if (list.length === 0) return null;
-          const areaDone = list.filter((i) => fraction(i, dayValues[i.key]) === 1).length;
+          const activeList = list.filter((i) => !isSkipped(dayValues[i.key]));
+          const areaDone = activeList.filter((i) => fraction(i, dayValues[i.key]) === 1).length;
           return (
             <section key={area.key} className="flex flex-col gap-2">
               <div className="flex items-baseline justify-between">
@@ -262,7 +285,7 @@ export function TodayClient({
                   {area.label}
                 </h3>
                 <span className="text-xs text-foreground/30 tabular-nums">
-                  {areaDone}/{list.length}
+                  {areaDone}/{activeList.length}
                 </span>
               </div>
               {list.map((item) => (

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { SKIPPED } from "@/lib/checklist/progress";
 import { isISODate } from "@/lib/time";
 
 // Sets progress on one checklist item for one date. value 0 clears it.
+// value SKIPPED (-1) marks the item excused for the day instead.
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -21,7 +23,7 @@ export async function POST(request: Request) {
     itemKey.length === 0 ||
     itemKey.length > 200 ||
     !Number.isInteger(value) ||
-    value < 0 ||
+    value < SKIPPED ||
     value > 1000
   ) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
