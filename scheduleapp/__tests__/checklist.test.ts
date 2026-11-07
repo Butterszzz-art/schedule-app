@@ -7,7 +7,15 @@ import {
   uniItemsForDate,
   upcomingAssessments,
 } from "@/lib/checklist/logic";
-import { dayScore, extrasForDate, fraction, fullValue, weekTasksFor } from "@/lib/checklist/progress";
+import {
+  dayScore,
+  extrasForDate,
+  fraction,
+  fullValue,
+  isSkipped,
+  SKIPPED,
+  weekTasksFor,
+} from "@/lib/checklist/progress";
 import { formatHours, shiftHours, totalHours } from "@/lib/checklist/shifts";
 import type { ExtraDTO, RoutineItemDTO } from "@/lib/checklist/types";
 import type { UniSession } from "@/lib/schedule/types";
@@ -188,6 +196,21 @@ describe("dayScore", () => {
     );
     expect(dayScore(items, values, extras)).toEqual({ done: 3, total: items.length + 1 });
   });
+
+  it("drops skipped items out of both done and total", () => {
+    const items = itemsForDate(routine("prep"), FRI, []);
+    const values = { wake: 1, posing: SKIPPED };
+    expect(dayScore(items, values, [])).toEqual({ done: 1, total: items.length - 1 });
+  });
+});
+
+describe("isSkipped", () => {
+  it("recognises only the skip sentinel", () => {
+    expect(isSkipped(SKIPPED)).toBe(true);
+    expect(isSkipped(0)).toBe(false);
+    expect(isSkipped(1)).toBe(false);
+    expect(isSkipped(undefined)).toBe(false);
+  });
 });
 
 describe("buildWeekRows", () => {
@@ -200,6 +223,15 @@ describe("buildWeekRows", () => {
     const gym = rows.find((r) => r.key === "gym")!;
     expect(gym.cells).toEqual(["full", "miss", "none", "due", "due", "due", "none"]);
     expect(rows.filter((r) => r.kind === "gym")).toHaveLength(1);
+  });
+
+  it("shows a skip cell instead of a miss when the day's item was excused", () => {
+    const dates = [MON, TUE];
+    const itemsByDate = Object.fromEntries(dates.map((d) => [d, itemsForDate(routine("prep"), d, [])]));
+    const valuesByDate = Object.fromEntries(dates.map((d) => [d, {}])) as Record<string, Record<string, number>>;
+    valuesByDate[MON] = { "gym-upper": SKIPPED };
+    const rows = buildWeekRows(dates, itemsByDate, valuesByDate, TUE);
+    expect(rows.find((r) => r.key === "gym")!.cells[0]).toBe("skip");
   });
 });
 

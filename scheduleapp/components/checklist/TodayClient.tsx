@@ -9,6 +9,7 @@ import {
   dayScore,
   extrasForDate,
   fraction,
+  isSkipped,
   weekTasksFor,
   type ExtraView,
 } from "@/lib/checklist/progress";
@@ -160,7 +161,9 @@ export function TodayClient({
     ...AREAS.map((a) => ({
       key: a.key,
       color: BLOCK_COLORS[a.kind].accent,
-      fractions: items.filter((i) => i.area === a.key).map((i) => fraction(i, dayValues[i.key])),
+      fractions: items
+        .filter((i) => i.area === a.key && !isSkipped(dayValues[i.key]))
+        .map((i) => fraction(i, dayValues[i.key])),
     })),
     { key: "extra", color: BLOCK_COLORS.free.accent, fractions: dayExtras.map((x) => (x.doneOn ? 1 : 0)) },
   ].filter((s) => s.fractions.length > 0);
@@ -253,7 +256,8 @@ export function TodayClient({
         {AREAS.map((area) => {
           const list = items.filter((i) => i.area === area.key);
           if (list.length === 0) return null;
-          const areaDone = list.filter((i) => fraction(i, dayValues[i.key]) === 1).length;
+          const activeList = list.filter((i) => !isSkipped(dayValues[i.key]));
+          const areaDone = activeList.filter((i) => fraction(i, dayValues[i.key]) === 1).length;
           return (
             <section key={area.key} className="flex flex-col gap-2">
               <div className="flex items-baseline justify-between">
@@ -262,7 +266,7 @@ export function TodayClient({
                   {area.label}
                 </h3>
                 <span className="text-xs text-foreground/30 tabular-nums">
-                  {areaDone}/{list.length}
+                  {areaDone}/{activeList.length}
                 </span>
               </div>
               {list.map((item) => (

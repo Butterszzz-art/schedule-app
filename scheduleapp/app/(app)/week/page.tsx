@@ -10,6 +10,13 @@ import { startOfIsoWeek, todayISODate } from "@/lib/time";
 
 function Cell({ state, accent }: { state: CellState; accent: string }) {
   if (state === "none") return <span className="inline-block h-1 w-1 rounded-full bg-[#222]" />;
+  if (state === "skip") {
+    return (
+      <span role="img" aria-label="Skipped" className="inline-block h-3.5 w-3.5 align-middle text-center text-[11px] leading-[14px] text-foreground/30">
+        –
+      </span>
+    );
+  }
   const style =
     state === "full"
       ? { background: accent }
@@ -116,10 +123,10 @@ export default async function WeekPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3.5 text-xs text-foreground/50">
-          {(["full", "half", "miss", "due"] as const).map((s) => (
+          {(["full", "half", "miss", "due", "skip"] as const).map((s) => (
             <span key={s} className="inline-flex items-center gap-1.5">
               <Cell state={s} accent="#C8F060" />
-              {{ full: "Done", half: "Partly", miss: "Missed", due: "Still to do" }[s]}
+              {{ full: "Done", half: "Partly", miss: "Missed", due: "Still to do", skip: "Skipped" }[s]}
             </span>
           ))}
         </div>

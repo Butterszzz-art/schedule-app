@@ -15,6 +15,8 @@ A personal mobile-first daily checklist app for a natural classic physique bodyb
 - Review Jaar 2 PB self-study plan (dated, `lib/checklist/studyplan.ts`): ~12 h/wk Nov 9–Dec 6, ~4 h/wk Dec 7–15, 50–60 h Dec 17–Jan 10. Every Review Jaar 2 PB session shows, even before 13:00.
 - Honours dropped (none were in the timetable). Known clash: Dec 16 Leren en Geheugen (World Fashion Center, ends 13:30) → Lineaire Algebra (USC Universum, starts 13:30), no travel time.
 
+**Changed 2026-11-07: per-day skip.** Any checklist item except the sleep anchors (area `"anchors"`) can be marked "Skip" for that one day — something came up, so it's excused instead of sitting as an unfinished or missed item. Stored as `ChecklistEntry.value = -1` (`SKIPPED` in `lib/checklist/progress.ts`); skipped items drop out of that day's done/total and out of the Week grid's miss/due count (their own "skip" cell instead). Doesn't touch the Routine template — skipping is per date, not a recurring change. The sleep anchors stay the one thing that's still non-negotiable.
+
 The user is preparing for two shows in Oct/Nov 2026 while studying Psychology at UvA (Science Park, Amsterdam) and living on Zeeburgeiland.
 
 ## Tech stack

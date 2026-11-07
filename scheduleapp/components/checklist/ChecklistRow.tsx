@@ -1,7 +1,7 @@
 "use client";
 
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
-import { fraction, fullValue } from "@/lib/checklist/progress";
+import { fraction, fullValue, isSkipped, SKIPPED } from "@/lib/checklist/progress";
 import type { ChecklistItem } from "@/lib/checklist/types";
 
 export function CheckIcon() {
@@ -52,15 +52,19 @@ export function ChecklistRow({
   onChange: (value: number) => void;
 }) {
   const colors = BLOCK_COLORS[item.kind] ?? BLOCK_COLORS.free;
+  const skipped = isSkipped(value);
   const f = fraction(item, value);
   const state = f === 1 ? "done" : f > 0 ? "partial" : "open";
   const v = value ?? 0;
   const full = fullValue(item);
+  // The sleep anchors are the one thing in the checklist that still can't
+  // move -- everything else can be excused for the day if something comes up.
+  const canSkip = item.area !== "anchors";
 
   return (
     <div
       className="flex min-h-[60px] items-center gap-3 rounded-xl border border-card-border py-2.5 pl-2.5 pr-3 transition-opacity"
-      style={{ background: colors.bg, opacity: state === "done" ? 0.55 : 1 }}
+      style={{ background: colors.bg, opacity: state === "done" ? 0.55 : skipped ? 0.5 : 1 }}
     >
       <CheckButton
         state={state}
@@ -72,8 +76,12 @@ export function ChecklistRow({
         <span className={`text-[15px] font-semibold ${state === "done" ? "line-through decoration-white/30" : ""}`}>
           {item.label}
         </span>
-        {(hint ?? item.hint) && (
-          <span className="text-xs text-foreground/50">{hint ?? item.hint}</span>
+        {skipped ? (
+          <span className="text-xs italic text-foreground/40">Skipped today</span>
+        ) : (
+          (hint ?? item.hint) && (
+            <span className="text-xs text-foreground/50">{hint ?? item.hint}</span>
+          )
         )}
 
         {item.type === "chunks" && (
@@ -126,6 +134,20 @@ export function ChecklistRow({
           </div>
         )}
       </div>
+      {canSkip && state !== "done" && (
+        <button
+          type="button"
+          onClick={() => onChange(skipped ? 0 : SKIPPED)}
+          aria-label={skipped ? `Restore ${item.label}` : `Skip ${item.label} today`}
+          className="shrink-0 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold"
+          style={{
+            borderColor: skipped ? colors.accent : "#2A2A2A",
+            color: skipped ? colors.accent : "#F0EDE880",
+          }}
+        >
+          {skipped ? "↺" : "Skip"}
+        </button>
+      )}
     </div>
   );
 }
