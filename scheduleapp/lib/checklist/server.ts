@@ -5,6 +5,7 @@ import { addDays } from "@/lib/time";
 import { isArea } from "./areas";
 import { DEFAULT_ROUTINE } from "./defaults";
 import { itemsForDate } from "./logic";
+import { dayScore } from "./progress";
 import type {
   ChecklistItem,
   DayValues,
@@ -148,4 +149,57 @@ export async function getGoals(
     target: g.target,
     progress: g.progress,
   }));
+}
+
+// How far back the streak looks for both the current run and the best one.
+const STREAK_LOOKBACK_DAYS = 90;
+
+/**
+ * Current and best consecutive-day streaks over the last ~90 days. A day
+ * counts as "full" when every scheduled routine/uni item was finished or
+ * skipped -- dayScore already drops skipped items from that day's own
+ * total (see progress.ts), so skipping something today owes it for the
+ * week (see buildWeekRows) but never breaks the streak. One-off tasks
+ * aren't counted here, just the routine + uni schedule. Today isn't
+ * required to be full yet for the current streak -- it just doesn't count
+ * until it is.
+ */
+export async function computeStreak(userId: string, today: string): Promise<{ current: number; best: number }> {
+  const start = addDays(today, -STREAK_LOOKBACK_DAYS);
+  const dates: string[] = [];
+  for (let d = start; d <= today; d = addDays(d, 1)) dates.push(d);
+
+  const modes = [...new Set(dates.map(getScheduleMode))];
+  const routines = Object.fromEntries(
+    await Promise.all(modes.map(async (m) => [m, await getRoutine(userId, m)] as const))
+  ) as Partial<Record<ScheduleMode, RoutineItemDTO[]>>;
+
+  const entries = await prisma.checklistEntry.findMany({
+    where: { userId, date: { gte: start, lte: today } },
+  });
+  const valuesByDate: Record<string, DayValues> = {};
+  for (const date of dates) valuesByDate[date] = {};
+  for (const e of entries) valuesByDate[e.date][e.itemKey] = e.value;
+
+  const fullDay = dates.map((date) => {
+    const items = itemsForDate(routines[getScheduleMode(date)] ?? [], date);
+    const { done, total } = dayScore(items, valuesByDate[date], []);
+    return total === 0 || done === total;
+  });
+
+  let current = 0;
+  for (let i = fullDay.length - 1; i >= 0; i--) {
+    if (fullDay[i]) current++;
+    else if (dates[i] === today) continue; // today's still open -- doesn't break it yet
+    else break;
+  }
+
+  let best = 0;
+  let run = 0;
+  for (const full of fullDay) {
+    run = full ? run + 1 : 0;
+    best = Math.max(best, run);
+  }
+
+  return { current, best: Math.max(best, current) };
 }

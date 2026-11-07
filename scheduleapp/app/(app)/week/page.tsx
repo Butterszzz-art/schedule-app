@@ -1,10 +1,12 @@
 import { Header } from "@/components/layout/Header";
 import { GoalsSection } from "@/components/checklist/GoalsSection";
+import { MomentumCard } from "@/components/checklist/MomentumCard";
 import { WeeklyTargets } from "@/components/checklist/WeeklyTargets";
 import { auth } from "@/lib/auth";
 import { buildWeekRows, weeklyTargets, type CellState } from "@/lib/checklist/logic";
+import { momentumNodesFromGoals, momentumNodesFromTargets, momentumPct } from "@/lib/checklist/momentum";
 import { dayScore, extrasForDate, weekTasksFor } from "@/lib/checklist/progress";
-import { getGoals, loadWeek } from "@/lib/checklist/server";
+import { computeStreak, getGoals, loadWeek } from "@/lib/checklist/server";
 import { formatHours, shiftHours, SHIFT_TARGET_HIGH, SHIFT_TARGET_LOW, totalHours } from "@/lib/checklist/shifts";
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
 import { DAYS } from "@/lib/schedule/days";
@@ -38,14 +40,16 @@ export default async function WeekPage() {
 
   const today = todayISODate();
   const monday = startOfIsoWeek(today);
-  const [week, goals] = await Promise.all([
+  const [week, goals, streak] = await Promise.all([
     loadWeek(userId, monday),
     getGoals(userId, isoWeekKey(today), monthKey(today)),
+    computeStreak(userId, today),
   ]);
   const rows = buildWeekRows(week.dates, week.itemsByDate, week.valuesByDate, today);
   const targets = weeklyTargets(rows);
   const weekGoals = goals.filter((g) => g.scope === "week");
   const monthGoals = goals.filter((g) => g.scope === "month");
+  const momentumNodes = [...momentumNodesFromTargets(targets), ...momentumNodesFromGoals(weekGoals)];
   const weekTasks = weekTasksFor(week.extras, week.dates[0], week.dates[0]);
   const hoursByDate = (date: string) =>
     week.shifts.filter((s) => s.date === date).reduce((sum, s) => sum + shiftHours(s.start, s.end), 0);
@@ -142,6 +146,14 @@ export default async function WeekPage() {
             </span>
           ))}
         </div>
+
+        <MomentumCard
+          pct={momentumPct(momentumNodes)}
+          streak={streak.current}
+          best={streak.best}
+          nodes={momentumNodes}
+          monthGoals={monthGoals}
+        />
 
         <WeeklyTargets targets={targets} />
 
