@@ -68,6 +68,12 @@ export default async function WeekPage() {
           <p className="text-[13px] text-foreground/50">What got done each day, at a glance.</p>
         </div>
 
+        {rows.length === 0 && (
+          <p className="rounded-xl border border-card-border bg-[#111] p-4 text-sm text-foreground/50">
+            No routine items yet -- head to the Routine tab to set up your checklist.
+          </p>
+        )}
+
         <div className="overflow-x-auto rounded-xl border border-card-border bg-[#111]">
           <table className="w-full border-collapse text-[13px]">
             <thead>

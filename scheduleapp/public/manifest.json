@@ -1,7 +1,7 @@
 {
   "name": "Schedule",
   "short_name": "Schedule",
-  "description": "Personal schedule and habit tracker",
+  "description": "A daily checklist and habit tracker",
   "start_url": "/today",
   "display": "standalone",
   "background_color": "#0A0A0A",

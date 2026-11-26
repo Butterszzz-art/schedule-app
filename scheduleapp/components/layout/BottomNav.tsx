@@ -7,7 +7,6 @@ const NAV_ITEMS = [
   { href: "/today", label: "Today" },
   { href: "/week", label: "Week" },
   { href: "/routine", label: "Routine" },
-  { href: "/prep", label: "Prep" },
 ] as const;
 
 export function BottomNav() {

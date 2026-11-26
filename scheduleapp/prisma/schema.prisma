@@ -33,6 +33,9 @@ model UserSettings {
   // Gates Today/Week/Routine behind /onboarding for a brand-new account
   // (one with no areas yet). Set true once they finish or skip it.
   onboardingComplete Boolean  @default(false)
+  // "HH:MM", 24h. The one daily push (see lib/notify.ts) fires in a short
+  // window starting here, if anything on that day's list is still open.
+  reminderTime       String   @default("20:30")
   updatedAt          DateTime @updatedAt
 }
 
