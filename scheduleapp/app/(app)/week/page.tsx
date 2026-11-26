@@ -7,10 +7,11 @@ import { buildWeekRows, weeklyTargets, type CellState } from "@/lib/checklist/lo
 import { momentumNodesFromGoals, momentumNodesFromTargets, momentumPct } from "@/lib/checklist/momentum";
 import { dayScore, extrasForDate, weekTasksFor } from "@/lib/checklist/progress";
 import { computeStreak, getGoals, loadWeek } from "@/lib/checklist/server";
-import { formatHours, shiftHours, SHIFT_TARGET_HIGH, SHIFT_TARGET_LOW, totalHours } from "@/lib/checklist/shifts";
+import { hasCompletedOnboarding } from "@/lib/onboarding";
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
 import { DAYS } from "@/lib/schedule/days";
 import { isoWeekKey, monthKey, startOfIsoWeek, todayISODate } from "@/lib/time";
+import { redirect } from "next/navigation";
 
 function Cell({ state, accent }: { state: CellState; accent: string }) {
   if (state === "none") return <span className="inline-block h-1 w-1 rounded-full bg-[#222]" />;
@@ -37,6 +38,7 @@ function Cell({ state, accent }: { state: CellState; accent: string }) {
 export default async function WeekPage() {
   const session = await auth();
   const userId = session!.user.id;
+  if (!(await hasCompletedOnboarding(userId))) redirect("/onboarding");
 
   const today = todayISODate();
   const monday = startOfIsoWeek(today);
@@ -51,9 +53,6 @@ export default async function WeekPage() {
   const monthGoals = goals.filter((g) => g.scope === "month");
   const momentumNodes = [...momentumNodesFromTargets(targets), ...momentumNodesFromGoals(weekGoals)];
   const weekTasks = weekTasksFor(week.extras, week.dates[0], week.dates[0]);
-  const hoursByDate = (date: string) =>
-    week.shifts.filter((s) => s.date === date).reduce((sum, s) => sum + shiftHours(s.start, s.end), 0);
-  const weekHours = totalHours(week.shifts);
 
   const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) =>
     new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { ...opts, timeZone: "UTC" });
@@ -68,6 +67,12 @@ export default async function WeekPage() {
           </h2>
           <p className="text-[13px] text-foreground/50">What got done each day, at a glance.</p>
         </div>
+
+        {rows.length === 0 && (
+          <p className="rounded-xl border border-card-border bg-[#111] p-4 text-sm text-foreground/50">
+            No routine items yet -- head to the Routine tab to set up your checklist.
+          </p>
+        )}
 
         <div className="overflow-x-auto rounded-xl border border-card-border bg-[#111]">
           <table className="w-full border-collapse text-[13px]">
@@ -110,14 +115,6 @@ export default async function WeekPage() {
                   ))}
                 </tr>
               ))}
-              <tr className="border-t border-[#161616]">
-                <td className="py-2 pl-3">Side job</td>
-                {week.dates.map((date) => (
-                  <td key={date} className="px-1 py-2 text-center tabular-nums" style={{ color: BLOCK_COLORS.work.accent }}>
-                    {hoursByDate(date) ? formatHours(hoursByDate(date)) : ""}
-                  </td>
-                ))}
-              </tr>
             </tbody>
           </table>
         </div>
@@ -127,13 +124,6 @@ export default async function WeekPage() {
             <span className="text-xs text-foreground/50">Weekly tasks</span>
             <span className="text-xl font-bold tabular-nums">
               {weekTasks.filter((x) => x.doneOn).length}/{weekTasks.length}
-            </span>
-          </div>
-          <div className="flex flex-col gap-0.5 rounded-xl border border-card-border p-3" style={{ background: BLOCK_COLORS.work.bg }}>
-            <span className="text-xs text-foreground/50">Side job</span>
-            <span className="text-xl font-bold tabular-nums">
-              {formatHours(weekHours)}
-              <span className="text-xs font-normal text-foreground/50"> / {SHIFT_TARGET_LOW}–{SHIFT_TARGET_HIGH}h</span>
             </span>
           </div>
         </div>

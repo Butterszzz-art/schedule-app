@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
-import { AREAS } from "@/lib/checklist/areas";
-import { applyDayPlan } from "@/lib/checklist/dayplan";
 import {
   dayScore,
   extrasForDate,
@@ -14,21 +12,12 @@ import {
   weekTasksFor,
   type ExtraView,
 } from "@/lib/checklist/progress";
-import type { ChecklistItem, DayValues, ExtraDTO, ExtraScope, ShiftDTO } from "@/lib/checklist/types";
+import type { AreaDTO, ChecklistItem, DayValues, ExtraDTO, ExtraScope } from "@/lib/checklist/types";
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
-import { DAYS, dayType, dayKeyForDate } from "@/lib/schedule/days";
-import type { ScheduleMode } from "@/lib/schedule/types";
+import { DAYS, dayKeyForDate } from "@/lib/schedule/days";
 import { CatchUpSection } from "./CatchUpSection";
 import { ChecklistRow } from "./ChecklistRow";
-import { ShiftCard } from "./ShiftCard";
 import { TaskSection } from "./TaskSection";
-
-export interface DayNutrition {
-  label: string;
-  calories: number;
-  carbs: number;
-  fat: number;
-}
 
 async function send(url: string, method: string, body?: unknown) {
   const res = await fetch(url, {
@@ -52,40 +41,28 @@ function formatLongDate(iso: string) {
 
 export function TodayClient({
   today,
-  mode,
+  areas,
   dates,
   itemsByDate,
   initialValues,
   initialExtras,
-  initialShifts,
-  nutritionByDate,
-  countdown,
-  comingUp,
 }: {
   today: string;
-  mode: ScheduleMode;
+  areas: AreaDTO[];
   dates: string[];
   itemsByDate: Record<string, ChecklistItem[]>;
   initialValues: Record<string, DayValues>;
   initialExtras: ExtraDTO[];
-  initialShifts: ShiftDTO[];
-  nutritionByDate: Record<string, DayNutrition>;
-  countdown: { days: number; name: string } | null;
-  comingUp: ReactNode;
 }) {
   const [sel, setSel] = useState(today);
   const [values, setValues] = useState(initialValues);
   const [extras, setExtras] = useState(initialExtras);
-  const [shifts, setShifts] = useState(initialShifts);
 
-  // Sleep/meal/gym times follow the shifts logged for that day.
-  const items = applyDayPlan(itemsByDate[sel] ?? [], sel, shifts);
+  const items = itemsByDate[sel] ?? [];
   const dayValues = values[sel] ?? {};
   const dayExtras = extrasForDate(extras, sel, today);
   const weekTasks = weekTasksFor(extras, dates[0], dates[0]);
   const { done, total } = dayScore(items, dayValues, dayExtras);
-  const nutrition = nutritionByDate[sel];
-  const isLowerDay = dayType(dayKeyForDate(sel)) === "lower";
 
   // Items skipped on an earlier day this week that are still owed -- see
   // the "owed" cell state in lib/checklist/logic.ts. Completing one here
@@ -143,35 +120,12 @@ export function TodayClient({
     }
   };
 
-  const addShift = async (shift: Omit<ShiftDTO, "id">) => {
-    try {
-      const res = await send("/api/shifts", "POST", shift);
-      const saved: ShiftDTO = await res.json();
-      setShifts((all) =>
-        [...all, saved].sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start))
-      );
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const deleteShift = async (id: string) => {
-    const previous = shifts;
-    setShifts((all) => all.filter((s) => s.id !== id));
-    try {
-      await send(`/api/shifts/${id}`, "DELETE");
-    } catch {
-      setShifts(previous);
-    }
-  };
-
   const selLabel = sel === today ? "today" : DAYS[dates.indexOf(sel)];
   const shortDate = (iso: string) => `${dayKeyForDate(iso)} ${Number(iso.slice(8))}`;
 
   // Segmented summary bar: one segment per area, sized by item count.
   const segments = [
-    ...AREAS.map((a) => ({
+    ...areas.map((a) => ({
       key: a.key,
       color: BLOCK_COLORS[a.kind].accent,
       fractions: items
@@ -188,21 +142,6 @@ export function TodayClient({
         <InstallBanner />
 
         <div className="flex flex-col gap-1.5">
-          <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.08em] text-foreground/50">
-            {mode === "prep" && (
-              <span className="rounded-full bg-accent/10 px-2.5 py-0.5 font-semibold text-accent">Prep</span>
-            )}
-            {nutrition && (
-              <span className="rounded-full bg-white/5 px-2.5 py-0.5 font-semibold text-foreground">
-                {nutrition.label} · {nutrition.calories} kcal
-              </span>
-            )}
-            {countdown && (
-              <span>
-                {countdown.days === 0 ? `${countdown.name} today` : `${countdown.days} days to ${countdown.name}`}
-              </span>
-            )}
-          </div>
           <h2 className="text-[28px] font-bold leading-tight tracking-tight">{formatLongDate(sel)}</h2>
         </div>
 
@@ -264,49 +203,45 @@ export function TodayClient({
           </div>
         </div>
 
-        {comingUp}
-
         <CatchUpSection
           items={catchUps}
           dayLabel={shortDate}
           onComplete={(date, item) => setValue(date, item.key, fullValue(item))}
         />
 
-        {AREAS.map((area) => {
-          const list = items.filter((i) => i.area === area.key);
-          if (list.length === 0) return null;
-          const activeList = list.filter((i) => !isSkipped(dayValues[i.key]));
-          const areaDone = activeList.filter((i) => fraction(i, dayValues[i.key]) === 1).length;
-          return (
-            <section key={area.key} className="flex flex-col gap-2">
-              <div className="flex items-baseline justify-between">
-                <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-foreground/50">
-                  <span className="h-[7px] w-[7px] rounded-full" style={{ background: BLOCK_COLORS[area.kind].accent }} />
-                  {area.label}
-                </h3>
-                <span className="text-xs text-foreground/30 tabular-nums">
-                  {areaDone}/{activeList.length}
-                </span>
-              </div>
-              {list.map((item) => (
-                <ChecklistRow
-                  key={item.key}
-                  item={item}
-                  value={dayValues[item.key]}
-                  hint={
-                    item.key === "protein" && nutrition
-                      ? `${nutrition.calories} kcal · roughly ${nutrition.carbs} g carbs · ${nutrition.fat} g fat`
-                      : undefined
-                  }
-                  onChange={(v) => setValue(sel, item.key, v)}
-                />
-              ))}
-              {area.key === "body" && isLowerDay && (
-                <p className="px-0.5 text-xs text-foreground/50">No cardio today: lower-body day, quads need to recover.</p>
-              )}
-            </section>
-          );
-        })}
+        {areas.length === 0 && items.length === 0 ? (
+          <p className="rounded-xl border border-card-border bg-[#111] p-4 text-sm text-foreground/50">
+            No areas yet. Head to the Routine tab to set up your checklist.
+          </p>
+        ) : (
+          areas.map((area) => {
+            const list = items.filter((i) => i.area === area.key);
+            if (list.length === 0) return null;
+            const activeList = list.filter((i) => !isSkipped(dayValues[i.key]));
+            const areaDone = activeList.filter((i) => fraction(i, dayValues[i.key]) === 1).length;
+            return (
+              <section key={area.key} className="flex flex-col gap-2">
+                <div className="flex items-baseline justify-between">
+                  <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-foreground/50">
+                    <span className="h-[7px] w-[7px] rounded-full" style={{ background: BLOCK_COLORS[area.kind].accent }} />
+                    {area.label}
+                  </h3>
+                  <span className="text-xs text-foreground/30 tabular-nums">
+                    {areaDone}/{activeList.length}
+                  </span>
+                </div>
+                {list.map((item) => (
+                  <ChecklistRow
+                    key={item.key}
+                    item={item}
+                    value={dayValues[item.key]}
+                    onChange={(v) => setValue(sel, item.key, v)}
+                  />
+                ))}
+              </section>
+            );
+          })
+        )}
 
         <TaskSection
           title={`Also ${selLabel}`}
@@ -327,15 +262,6 @@ export function TodayClient({
           onDelete={deleteExtra}
           onAdd={(label) => addExtra(label, "week")}
         />
-
-        <ShiftCard
-          date={sel}
-          dayLabel={sel === today ? "today" : DAYS[dates.indexOf(sel)]}
-          shifts={shifts}
-          onAdd={addShift}
-          onDelete={deleteShift}
-        />
-
       </main>
     </>
   );

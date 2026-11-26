@@ -1,51 +1,31 @@
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { upcomingAssessments } from "@/lib/checklist/logic";
+import { getAreas } from "@/lib/checklist/areas";
 import { loadWeek } from "@/lib/checklist/server";
-import { getDayType, NUTRITION_TARGETS } from "@/lib/nutrition";
-import { daysUntil, nextShow } from "@/lib/prep";
-import { dayKeyForDate } from "@/lib/schedule/days";
-import { getScheduleMode } from "@/lib/schedule/mode";
+import { hasCompletedOnboarding } from "@/lib/onboarding";
 import { startOfIsoWeek, todayISODate } from "@/lib/time";
-import { ComingUp } from "@/components/checklist/ComingUp";
-import { TodayClient, type DayNutrition } from "@/components/checklist/TodayClient";
+import { TodayClient } from "@/components/checklist/TodayClient";
 
 export default async function TodayPage() {
   const session = await auth();
   // proxy.ts guarantees an authenticated session for every (app) route.
   const userId = session!.user.id;
+  if (!(await hasCompletedOnboarding(userId))) redirect("/onboarding");
 
   const today = todayISODate();
-  const week = await loadWeek(userId, startOfIsoWeek(today));
-
-  const nutritionByDate: Record<string, DayNutrition> = {};
-  for (const date of week.dates) {
-    const type = getDayType(dayKeyForDate(date), 1);
-    const t = NUTRITION_TARGETS[type];
-    nutritionByDate[date] = {
-      label: type === "training" ? "Training day" : "Rest day",
-      calories: t.calories,
-      carbs: t.carbs,
-      fat: t.fat,
-    };
-  }
-
-  const show = nextShow(today);
-  const days = daysUntil(show.date, today);
-  const countdown =
-    days >= 0 ? { days, name: show.name.split(" — ")[1] ?? show.name } : null;
+  const [week, areas] = await Promise.all([
+    loadWeek(userId, startOfIsoWeek(today)),
+    getAreas(userId),
+  ]);
 
   return (
     <TodayClient
       today={today}
-      mode={getScheduleMode(today)}
+      areas={areas}
       dates={week.dates}
       itemsByDate={week.itemsByDate}
       initialValues={week.valuesByDate}
       initialExtras={week.extras}
-      initialShifts={week.shifts}
-      nutritionByDate={nutritionByDate}
-      countdown={countdown}
-      comingUp={<ComingUp today={today} assessments={upcomingAssessments(today)} />}
     />
   );
 }

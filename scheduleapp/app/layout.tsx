@@ -11,7 +11,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: "Schedule",
-  description: "Personal schedule and habit tracker",
+  description: "A daily checklist and habit tracker",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

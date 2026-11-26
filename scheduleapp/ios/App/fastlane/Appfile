@@ -1,0 +1,4 @@
+# Keep in sync with capacitor.config.ts's appId -- TODO: replace the
+# placeholder there and here once you've registered your real bundle id.
+app_identifier(ENV["APP_IDENTIFIER"] || "com.example.schedule")
+team_id(ENV["APPLE_TEAM_ID"])
