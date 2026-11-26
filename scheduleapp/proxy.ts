@@ -6,7 +6,8 @@ import { auth } from "@/lib/auth";
 // to /login and logged-in visitors away from /login.
 export const proxy = auth((req) => {
   const isLoggedIn = !!req.auth;
-  const isAuthRoute = req.nextUrl.pathname.startsWith("/login");
+  const isAuthRoute =
+    req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/signup");
 
   if (!isLoggedIn && !isAuthRoute) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));

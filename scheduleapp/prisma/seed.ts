@@ -6,6 +6,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+// Dev-only fixture: /signup is the real way to create an account now.
+// This just gives a fresh local/branch database one known login to test with.
 async function main() {
   const email = process.env.AUTH_USER_EMAIL;
   const password = process.env.AUTH_USER_PASSWORD;

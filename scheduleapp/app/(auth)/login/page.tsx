@@ -52,6 +52,13 @@ export default function LoginPage() {
           {isPending ? "Signing in..." : "Sign in"}
         </button>
       </form>
+
+      <p className="text-sm text-foreground/50">
+        New here?{" "}
+        <a href="/signup" className="font-semibold text-accent">
+          Create an account
+        </a>
+      </p>
     </main>
   );
 }
