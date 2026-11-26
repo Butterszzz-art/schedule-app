@@ -22,5 +22,10 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // sw.js/manifest.json/icons must be excluded too: a redirect response on
+  // sw.js in particular is disallowed by the service worker spec, so an
+  // unauthenticated visitor's registration silently fails otherwise.
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.json|icon-192.png|icon-512.png|apple-touch-icon.png).*)",
+  ],
 };
