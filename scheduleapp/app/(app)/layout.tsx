@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PageTransition } from "@/components/layout/PageTransition";
+import { NativePushRegister } from "@/components/pwa/NativePushRegister";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <>
+      <NativePushRegister />
       {/* Clears the fixed BottomNav (~64px + iOS home-indicator inset). */}
       <div
         className="flex flex-1 flex-col"

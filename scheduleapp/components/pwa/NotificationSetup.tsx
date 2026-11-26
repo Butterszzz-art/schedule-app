@@ -83,13 +83,13 @@ export function NotificationSetup() {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-card-border bg-[#0E0E0E] p-4">
       <div className="min-w-0">
-        <p className="text-sm font-semibold">Block reminders</p>
+        <p className="text-sm font-semibold">Push notifications</p>
         <p className="text-xs text-foreground/50">
           {denied
             ? "Blocked — enable notifications for this app in your browser/OS settings."
             : subscribed
-              ? "You'll get a push before each block starts."
-              : "Get notified before gym, cardio, meals, and more."}
+              ? "You'll get a push at your reminder time if anything's still open."
+              : "Get a nudge if anything's still open by your reminder time."}
         </p>
       </div>
       {!subscribed && !denied && (

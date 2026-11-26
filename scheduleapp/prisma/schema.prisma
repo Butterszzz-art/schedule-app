@@ -58,12 +58,14 @@ model UserArea {
 }
 
 model PushSubscription {
-  id        String   @id @default(cuid())
-  userId    String
-  endpoint  String   @unique
-  p256dh    String
-  auth      String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  userId      String
+  platform    String   @default("web") // "web" | "ios"
+  endpoint    String?  @unique // web: Web Push subscription endpoint URL
+  p256dh      String?
+  auth        String?
+  deviceToken String?  @unique // ios: APNs device token
+  createdAt   DateTime @default(now())
 
   @@index([userId])
 }
