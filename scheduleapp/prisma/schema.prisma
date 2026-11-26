@@ -24,13 +24,16 @@ model User {
 }
 
 model UserSettings {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id])
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
   // Authenticates the public iCal feed URL (/api/calendar/[token].ics)
   // without requiring login -- treat it like an API key.
-  calendarToken String   @unique @default(cuid())
-  updatedAt     DateTime @updatedAt
+  calendarToken      String   @unique @default(cuid())
+  // Gates Today/Week/Routine behind /onboarding for a brand-new account
+  // (one with no areas yet). Set true once they finish or skip it.
+  onboardingComplete Boolean  @default(false)
+  updatedAt          DateTime @updatedAt
 }
 
 // A user-defined checklist area (e.g. "Health", "Work"). Areas are fully

@@ -7,9 +7,11 @@ import { buildWeekRows, weeklyTargets, type CellState } from "@/lib/checklist/lo
 import { momentumNodesFromGoals, momentumNodesFromTargets, momentumPct } from "@/lib/checklist/momentum";
 import { dayScore, extrasForDate, weekTasksFor } from "@/lib/checklist/progress";
 import { computeStreak, getGoals, loadWeek } from "@/lib/checklist/server";
+import { hasCompletedOnboarding } from "@/lib/onboarding";
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
 import { DAYS } from "@/lib/schedule/days";
 import { isoWeekKey, monthKey, startOfIsoWeek, todayISODate } from "@/lib/time";
+import { redirect } from "next/navigation";
 
 function Cell({ state, accent }: { state: CellState; accent: string }) {
   if (state === "none") return <span className="inline-block h-1 w-1 rounded-full bg-[#222]" />;
@@ -36,6 +38,7 @@ function Cell({ state, accent }: { state: CellState; accent: string }) {
 export default async function WeekPage() {
   const session = await auth();
   const userId = session!.user.id;
+  if (!(await hasCompletedOnboarding(userId))) redirect("/onboarding");
 
   const today = todayISODate();
   const monday = startOfIsoWeek(today);
