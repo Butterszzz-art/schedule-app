@@ -1,13 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_ROUTINE } from "@/lib/checklist/defaults";
-import {
-  attendsSession,
-  buildWeekRows,
-  itemsForDate,
-  uniItemsForDate,
-  upcomingAssessments,
-  weeklyTargets,
-} from "@/lib/checklist/logic";
+import { buildWeekRows, itemsForDate, weeklyTargets } from "@/lib/checklist/logic";
 import { goalFraction } from "@/lib/checklist/goals";
 import { monthKey } from "@/lib/time";
 import {
@@ -19,15 +11,7 @@ import {
   SKIPPED,
   weekTasksFor,
 } from "@/lib/checklist/progress";
-import { formatHours, shiftHours, totalHours } from "@/lib/checklist/shifts";
 import type { ExtraDTO, RoutineItemDTO } from "@/lib/checklist/types";
-import type { UniSession } from "@/lib/schedule/types";
-
-const routine = (mode: "prep" | "normal"): RoutineItemDTO[] =>
-  DEFAULT_ROUTINE[mode].map((d, order) => ({ ...d, id: d.key, order }));
-
-const keys = (date: string, mode: "prep" | "normal" = "prep") =>
-  itemsForDate(routine(mode), date, []).map((i) => i.key);
 
 // 2026-10-05 is a Monday.
 const MON = "2026-10-05";
@@ -37,106 +21,29 @@ const FRI = "2026-10-09";
 const SAT = "2026-10-10";
 const SUN = "2026-10-11";
 
-describe("default routine", () => {
-  it("never puts cardio on Tue or Fri, in either mode", () => {
-    for (const mode of ["prep", "normal"] as const) {
-      const cardio = DEFAULT_ROUTINE[mode].find((i) => i.key === "cardio")!;
-      expect(cardio.days).not.toContain(1);
-      expect(cardio.days).not.toContain(4);
-    }
+const AREA_ORDER = ["anchors", "health", "work"];
+
+const fixtureRoutine: RoutineItemDTO[] = [
+  { id: "1", key: "wake", area: "anchors", kind: "sleep", label: "Up by 06:30", hint: "", type: "check", target: 1, chunks: [], days: [0, 1, 2, 3, 4, 5, 6], order: 0 },
+  { id: "2", key: "exercise", area: "health", kind: "gym", label: "Exercise", hint: "", type: "check", target: 1, chunks: [], days: [0, 2, 4], order: 0 },
+  { id: "3", key: "meals", area: "health", kind: "meal", label: "Meals", hint: "", type: "count", target: 3, chunks: [], days: [0, 1, 2, 3, 4, 5, 6], order: 1 },
+  { id: "4", key: "deepwork", area: "work", kind: "study", label: "Deep work", hint: "", type: "chunks", target: 1, chunks: ["2h", "1h"], days: [0, 1, 2, 3, 4], order: 0 },
+];
+
+const items = (date: string) => itemsForDate(fixtureRoutine, date, AREA_ORDER);
+const keys = (date: string) => items(date).map((i) => i.key);
+
+describe("itemsForDate", () => {
+  it("only lists items scheduled for that weekday", () => {
+    expect(keys(MON)).toEqual(expect.arrayContaining(["wake", "exercise", "meals", "deepwork"]));
+    expect(keys(TUE)).not.toContain("exercise");
+    expect(keys(SAT)).not.toContain("deepwork");
   });
 
-  it("has posing daily in prep and none in normal mode", () => {
-    expect(keys(WED, "prep")).toContain("posing");
-    expect(keys(WED, "normal")).not.toContain("posing");
-  });
-
-  it("has martial arts on Wed/Sun only in normal mode", () => {
-    expect(keys(WED, "normal")).toContain("ma");
-    expect(keys(SUN, "normal")).toContain("ma");
-    expect(keys(WED, "prep")).not.toContain("ma");
-  });
-
-  it("keeps the sleep anchors every day", () => {
-    for (const d of [MON, WED, SUN]) {
-      expect(keys(d)).toEqual(expect.arrayContaining(["wake", "bed"]));
-    }
-  });
-
-  it("picks the right gym day and content items", () => {
-    expect(keys(MON)).toContain("gym-upper");
-    expect(keys(FRI)).toContain("gym-lower");
-    expect(keys(WED)).not.toContain("gym-upper");
-    expect(keys(TUE)).toContain("web");
-    expect(keys(SAT)).toContain("yt");
-    expect(keys(SAT)).not.toContain("web");
-  });
-
-  it("uses 3 study chunks on rest days and 2 on lift days", () => {
-    const study = (d: string) =>
-      itemsForDate(routine("prep"), d, []).find((i) => i.kind === "study")!;
-    expect(study(WED).chunks).toEqual(["2h", "1.5h", "1h"]);
-    expect(study(MON).chunks).toEqual(["2h", "1.5h"]);
-  });
-
-  it("sorts items by area", () => {
-    const areas = itemsForDate(routine("prep"), MON, []).map((i) => i.area);
+  it("sorts by area order, then routine order within an area", () => {
+    const areas = items(MON).map((i) => i.area);
     expect(areas.indexOf("anchors")).toBe(0);
-    expect(areas.lastIndexOf("body")).toBeLessThan(areas.indexOf("fuel"));
-  });
-});
-
-describe("uni sessions", () => {
-  const session = (over: Partial<UniSession>): UniSession => ({
-    id: "s",
-    date: MON,
-    courseCode: "X",
-    courseName: "Lineaire algebra",
-    type: "Lecture",
-    start: 15,
-    end: 16.75,
-    location: "SP C0.110",
-    note: "",
-    ...over,
-  });
-
-  it("skips plain lectures before 13:00 but keeps mandatory sessions", () => {
-    expect(attendsSession({ type: "Lecture", start: 9 })).toBe(false);
-    expect(attendsSession({ type: "Lecture", start: 13 })).toBe(true);
-    expect(attendsSession({ type: "Practical", start: 9 })).toBe(true);
-    expect(attendsSession({ type: "Question session", start: 10 })).toBe(false);
-  });
-
-  it("leaves resits off the daily list", () => {
-    expect(attendsSession({ type: "Computer-based resit", start: 13 })).toBe(false);
-  });
-
-  it("lists upcoming exams, tests and resits but not lectures", () => {
-    const sessions = [
-      session({ id: "lec", date: "2026-10-12" }),
-      session({ id: "exam", date: "2026-10-20", type: "Computer-based examination" }),
-      session({ id: "resit", date: "2026-10-21", type: "Computer-based resit" }),
-      session({ id: "far", date: "2026-12-16", type: "Examination" }),
-    ];
-    const out = upcomingAssessments("2026-10-10", 21, sessions);
-    expect(out.map((a) => [a.id, a.resit])).toEqual([
-      ["exam", false],
-      ["resit", true],
-    ]);
-  });
-
-  it("turns a session into a uni item with its time and room", () => {
-    const [item] = uniItemsForDate(MON, [session({})]);
-    expect(item.key).toBe("uni:s");
-    expect(item.label).toBe("Lecture: Lineaire algebra");
-    expect(item.hint).toBe("15:00–16:45 · SP C0.110");
-  });
-
-  it("slots uni items in after Training", () => {
-    const items = itemsForDate(routine("prep"), MON, [session({})]);
-    const areas = items.map((i) => i.area);
-    expect(areas.indexOf("uni")).toBeGreaterThan(areas.lastIndexOf("body"));
-    expect(areas.indexOf("uni")).toBeLessThan(areas.indexOf("fuel"));
+    expect(areas.lastIndexOf("health")).toBeLessThan(areas.indexOf("work"));
   });
 });
 
@@ -190,20 +97,20 @@ describe("extrasForDate", () => {
 
 describe("dayScore", () => {
   it("counts finished routine items and one-offs", () => {
-    const items = itemsForDate(routine("prep"), FRI, []);
-    const values = { wake: 1, meals: 3, posing: 1 };
+    const list = items(FRI);
+    const values = { wake: 1, meals: 3, exercise: 1 };
     const extras = extrasForDate(
       [{ id: "x", date: FRI, scope: "day", label: "x", doneOn: FRI }],
       FRI,
       FRI
     );
-    expect(dayScore(items, values, extras)).toEqual({ done: 3, total: items.length + 1 });
+    expect(dayScore(list, values, extras)).toEqual({ done: 4, total: list.length + 1 });
   });
 
   it("drops skipped items out of both done and total", () => {
-    const items = itemsForDate(routine("prep"), FRI, []);
-    const values = { wake: 1, posing: SKIPPED };
-    expect(dayScore(items, values, [])).toEqual({ done: 1, total: items.length - 1 });
+    const list = items(FRI);
+    const values = { wake: 1, exercise: SKIPPED };
+    expect(dayScore(list, values, [])).toEqual({ done: 1, total: list.length - 1 });
   });
 });
 
@@ -217,46 +124,47 @@ describe("isSkipped", () => {
 });
 
 describe("buildWeekRows", () => {
-  it("merges gym days into one row and marks past misses", () => {
+  it("gives each routine item its own row and marks past misses", () => {
     const dates = [MON, TUE, WED, "2026-10-08", FRI, SAT, SUN];
-    const itemsByDate = Object.fromEntries(dates.map((d) => [d, itemsForDate(routine("prep"), d, [])]));
+    const itemsByDate = Object.fromEntries(dates.map((d) => [d, items(d)]));
     const valuesByDate = Object.fromEntries(dates.map((d) => [d, {}])) as Record<string, Record<string, number>>;
-    valuesByDate[MON] = { "gym-upper": 1 };
-    const rows = buildWeekRows(dates, itemsByDate, valuesByDate, WED);
-    const gym = rows.find((r) => r.key === "gym")!;
-    expect(gym.cells).toEqual(["full", "miss", "none", "due", "due", "due", "none"]);
-    expect(rows.filter((r) => r.kind === "gym")).toHaveLength(1);
+    valuesByDate[MON] = { exercise: 1 };
+    // exercise is scheduled Mon/Wed/Fri; today is Fri, so Wed (no value) is a past miss.
+    const rows = buildWeekRows(dates, itemsByDate, valuesByDate, FRI);
+    const exercise = rows.find((r) => r.key === "exercise")!;
+    expect(exercise.cells).toEqual(["full", "none", "miss", "none", "due", "none", "none"]);
   });
 
   it("shows an owed cell, not a miss, while the week it was skipped in is still open", () => {
     const dates = [MON, TUE];
-    const itemsByDate = Object.fromEntries(dates.map((d) => [d, itemsForDate(routine("prep"), d, [])]));
+    const itemsByDate = Object.fromEntries(dates.map((d) => [d, items(d)]));
     const valuesByDate = Object.fromEntries(dates.map((d) => [d, {}])) as Record<string, Record<string, number>>;
-    valuesByDate[MON] = { "gym-upper": SKIPPED };
+    valuesByDate[MON] = { exercise: SKIPPED };
     const rows = buildWeekRows(dates, itemsByDate, valuesByDate, TUE);
-    expect(rows.find((r) => r.key === "gym")!.cells[0]).toBe("owed");
+    expect(rows.find((r) => r.key === "exercise")!.cells[0]).toBe("owed");
   });
 
   it("turns an unresolved owed cell into a miss once that week has ended", () => {
     const dates = [MON, TUE];
-    const itemsByDate = Object.fromEntries(dates.map((d) => [d, itemsForDate(routine("prep"), d, [])]));
+    const itemsByDate = Object.fromEntries(dates.map((d) => [d, items(d)]));
     const valuesByDate = Object.fromEntries(dates.map((d) => [d, {}])) as Record<string, Record<string, number>>;
-    valuesByDate[MON] = { "gym-upper": SKIPPED };
+    valuesByDate[MON] = { exercise: SKIPPED };
     const rows = buildWeekRows(dates, itemsByDate, valuesByDate, WED);
-    expect(rows.find((r) => r.key === "gym")!.cells[0]).toBe("miss");
+    expect(rows.find((r) => r.key === "exercise")!.cells[0]).toBe("miss");
   });
 });
 
 describe("weeklyTargets", () => {
   it("derives the target from scheduled days and counts owed separately from done", () => {
     const dates = [MON, TUE, WED, "2026-10-08", FRI, SAT, SUN];
-    const itemsByDate = Object.fromEntries(dates.map((d) => [d, itemsForDate(routine("prep"), d, [])]));
+    const itemsByDate = Object.fromEntries(dates.map((d) => [d, items(d)]));
     const valuesByDate = Object.fromEntries(dates.map((d) => [d, {}])) as Record<string, Record<string, number>>;
-    valuesByDate[MON] = { "gym-upper": 1 };
-    valuesByDate[TUE] = { "gym-lower": SKIPPED };
-    const rows = buildWeekRows(dates, itemsByDate, valuesByDate, WED);
-    const gym = weeklyTargets(rows).find((t) => t.key === "gym")!;
-    expect(gym).toEqual(expect.objectContaining({ target: 5, done: 1, owed: 1 }));
+    valuesByDate[MON] = { exercise: 1 };
+    valuesByDate[WED] = { exercise: SKIPPED };
+    // today is Thu, so the Wed skip is still catchable (owed), not a miss.
+    const rows = buildWeekRows(dates, itemsByDate, valuesByDate, "2026-10-08");
+    const exercise = weeklyTargets(rows).find((t) => t.key === "exercise")!;
+    expect(exercise).toEqual(expect.objectContaining({ target: 3, done: 1, owed: 1 }));
   });
 });
 
@@ -264,8 +172,8 @@ describe("weekTasksFor", () => {
   const LAST_MON = "2026-09-28";
   const tasks: ExtraDTO[] = [
     { id: "old", date: LAST_MON, scope: "week", label: "Book physio", doneOn: null },
-    { id: "now", date: MON, scope: "week", label: "Edit YouTube intro", doneOn: null },
-    { id: "done", date: LAST_MON, scope: "week", label: "Order tan", doneOn: TUE },
+    { id: "now", date: MON, scope: "week", label: "Edit intro", doneOn: null },
+    { id: "done", date: LAST_MON, scope: "week", label: "Order supplies", doneOn: TUE },
     { id: "day", date: MON, scope: "day", label: "Not a week task", doneOn: null },
   ];
 
@@ -303,22 +211,5 @@ describe("goalFraction", () => {
   it("is a ratio for a counted goal, clamped to 1", () => {
     expect(goalFraction({ target: 4, progress: 1 })).toBe(0.25);
     expect(goalFraction({ target: 4, progress: 10 })).toBe(1);
-  });
-});
-
-describe("shifts", () => {
-  it("counts hours between start and end", () => {
-    expect(shiftHours("17:00", "21:30")).toBe(4.5);
-  });
-
-  it("handles shifts past midnight", () => {
-    expect(shiftHours("22:00", "02:00")).toBe(4);
-  });
-
-  it("totals a week and formats it", () => {
-    expect(totalHours([{ start: "09:00", end: "13:00" }, { start: "17:00", end: "20:15" }])).toBe(7.25);
-    expect(formatHours(7.25)).toBe("7h 15m");
-    expect(formatHours(3.5)).toBe("3.5h");
-    expect(formatHours(4)).toBe("4h");
   });
 });

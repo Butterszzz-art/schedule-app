@@ -2,23 +2,20 @@
 
 import { useState } from "react";
 import { Header } from "@/components/layout/Header";
-import { AREAS, EDITABLE_AREAS } from "@/lib/checklist/areas";
-import type { Area, RoutineItemDTO } from "@/lib/checklist/types";
+import type { AreaDTO, RoutineItemDTO } from "@/lib/checklist/types";
 import { BLOCK_COLORS } from "@/lib/schedule/colors";
 import { DAYS } from "@/lib/schedule/days";
-import type { ScheduleMode } from "@/lib/schedule/types";
 
 export function RoutineClient({
-  mode,
+  areas,
   initialRoutine,
 }: {
-  mode: ScheduleMode;
+  areas: AreaDTO[];
   initialRoutine: RoutineItemDTO[];
 }) {
   const [routine, setRoutine] = useState(initialRoutine);
   const [label, setLabel] = useState("");
-  const [area, setArea] = useState<Area>(EDITABLE_AREAS[0].key);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const [area, setArea] = useState(areas[0]?.key ?? "");
   const [busy, setBusy] = useState(false);
 
   const toggleDay = async (item: RoutineItemDTO, day: number) => {
@@ -45,33 +42,18 @@ export function RoutineClient({
 
   const add = async () => {
     const text = label.trim();
-    if (!text) return;
+    if (!text || !area) return;
     setBusy(true);
     const res = await fetch("/api/routine", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode, area, label: text }),
+      body: JSON.stringify({ area, label: text }),
     }).catch(() => null);
     setBusy(false);
     if (res?.ok) {
       const item: RoutineItemDTO = await res.json();
       setRoutine((all) => [...all, item]);
       setLabel("");
-    }
-  };
-
-  const reset = async () => {
-    setBusy(true);
-    const res = await fetch("/api/routine/reset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode }),
-    }).catch(() => null);
-    setBusy(false);
-    setConfirmReset(false);
-    if (res?.ok) {
-      const { routine: fresh } = (await res.json()) as { routine: RoutineItemDTO[] };
-      setRoutine(fresh);
     }
   };
 
@@ -83,46 +65,51 @@ export function RoutineClient({
           <h2 className="text-[28px] font-bold leading-tight tracking-tight">Your daily list</h2>
           <p className="text-[13px] text-foreground/50">
             Pick which days each item shows up. Changes apply to Today straight away.
-            {mode === "prep" ? " This is your prep routine; the normal one takes over after Nov 2." : ""}
           </p>
         </div>
 
-        <form
-          className="flex flex-wrap gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            add();
-          }}
-        >
-          <input
-            id="routine-input"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            maxLength={120}
-            autoComplete="off"
-            aria-label="New routine item"
-            placeholder="New routine item…"
-            className="min-h-[46px] min-w-0 basis-full rounded-xl border border-[#222] bg-[#141414] px-3.5 text-sm outline-none focus:border-accent"
-          />
-          <select
-            id="routine-area"
-            value={area}
-            onChange={(e) => setArea(e.target.value as Area)}
-            aria-label="Area"
-            className="min-h-[46px] min-w-0 flex-1 rounded-xl border border-[#222] bg-[#141414] px-3 text-sm outline-none focus:border-accent"
+        {areas.length === 0 ? (
+          <p className="rounded-xl border border-card-border bg-[#111] p-4 text-sm text-foreground/50">
+            No areas yet. Set up your areas to start building a routine.
+          </p>
+        ) : (
+          <form
+            className="flex flex-wrap gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              add();
+            }}
           >
-            {EDITABLE_AREAS.map((a) => (
-              <option key={a.key} value={a.key}>
-                {a.label}
-              </option>
-            ))}
-          </select>
-          <button type="submit" disabled={busy} className="min-h-[46px] shrink-0 rounded-xl bg-accent px-4 text-sm font-bold text-[#0A0A0A] disabled:opacity-50">
-            Add, every day
-          </button>
-        </form>
+            <input
+              id="routine-input"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              maxLength={120}
+              autoComplete="off"
+              aria-label="New routine item"
+              placeholder="New routine item…"
+              className="min-h-[46px] min-w-0 basis-full rounded-xl border border-[#222] bg-[#141414] px-3.5 text-sm outline-none focus:border-accent"
+            />
+            <select
+              id="routine-area"
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              aria-label="Area"
+              className="min-h-[46px] min-w-0 flex-1 rounded-xl border border-[#222] bg-[#141414] px-3 text-sm outline-none focus:border-accent"
+            >
+              {areas.map((a) => (
+                <option key={a.key} value={a.key}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+            <button type="submit" disabled={busy} className="min-h-[46px] shrink-0 rounded-xl bg-accent px-4 text-sm font-bold text-[#0A0A0A] disabled:opacity-50">
+              Add, every day
+            </button>
+          </form>
+        )}
 
-        {AREAS.filter((a) => a.key !== "uni").map((a) => {
+        {areas.map((a) => {
           const list = routine.filter((r) => r.area === a.key);
           if (list.length === 0) return null;
           return (
@@ -182,28 +169,6 @@ export function RoutineClient({
             </section>
           );
         })}
-
-        <p className="text-xs text-foreground/50">
-          Uni sessions come from your timetable: anything from 13:00, plus seminars, tutorials, practicals and exams.
-        </p>
-
-        {confirmReset ? (
-          <div className="flex flex-col gap-2 rounded-xl border border-card-border bg-[#111] p-3">
-            <p className="text-sm">Undo all your routine edits and go back to the default list? Your ticks are kept.</p>
-            <div className="flex gap-2">
-              <button type="button" onClick={reset} disabled={busy} className="min-h-11 flex-1 rounded-xl bg-accent text-sm font-bold text-[#0A0A0A] disabled:opacity-50">
-                Restore defaults
-              </button>
-              <button type="button" onClick={() => setConfirmReset(false)} className="min-h-11 flex-1 rounded-xl border border-[#222] text-sm font-semibold text-foreground/70">
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button type="button" onClick={() => setConfirmReset(true)} className="min-h-11 rounded-xl border border-[#222] text-sm font-semibold text-foreground/70">
-            Restore default routine
-          </button>
-        )}
       </main>
     </>
   );

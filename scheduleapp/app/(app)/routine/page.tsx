@@ -1,15 +1,13 @@
 import { auth } from "@/lib/auth";
+import { getAreas } from "@/lib/checklist/areas";
 import { getRoutine } from "@/lib/checklist/server";
-import { getScheduleMode } from "@/lib/schedule/mode";
-import { todayISODate } from "@/lib/time";
 import { RoutineClient } from "@/components/checklist/RoutineClient";
 
 export default async function RoutinePage() {
   const session = await auth();
   const userId = session!.user.id;
 
-  const mode = getScheduleMode(todayISODate());
-  const routine = await getRoutine(userId, mode);
+  const [areas, routine] = await Promise.all([getAreas(userId), getRoutine(userId)]);
 
-  return <RoutineClient mode={mode} initialRoutine={routine} />;
+  return <RoutineClient areas={areas} initialRoutine={routine} />;
 }

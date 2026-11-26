@@ -1,9 +1,6 @@
 import { prisma } from "@/lib/db";
-import { getScheduleMode } from "@/lib/schedule/mode";
-import type { ScheduleMode } from "@/lib/schedule/types";
 import { addDays } from "@/lib/time";
-import { isArea } from "./areas";
-import { DEFAULT_ROUTINE } from "./defaults";
+import { getAreas } from "./areas";
 import { itemsForDate } from "./logic";
 import { dayScore } from "./progress";
 import type {
@@ -14,7 +11,6 @@ import type {
   GoalScope,
   ItemType,
   RoutineItemDTO,
-  ShiftDTO,
 } from "./types";
 
 type RoutineRow = Awaited<ReturnType<typeof prisma.routineItem.findMany>>[number];
@@ -23,7 +19,7 @@ function toDTO(r: RoutineRow): RoutineItemDTO {
   return {
     id: r.id,
     key: r.key,
-    area: isArea(r.area) ? r.area : "life",
+    area: r.area,
     kind: r.kind as RoutineItemDTO["kind"],
     label: r.label,
     hint: r.hint,
@@ -35,28 +31,13 @@ function toDTO(r: RoutineRow): RoutineItemDTO {
   };
 }
 
-/** Writes the default routine for `mode`. createMany + skipDuplicates makes it race-safe. */
-export async function seedRoutine(userId: string, mode: ScheduleMode) {
-  await prisma.routineItem.createMany({
-    data: DEFAULT_ROUTINE[mode].map((d, order) => ({ ...d, userId, mode, order })),
-    skipDuplicates: true,
-  });
-}
-
-/** The user's (non-archived) routine for a mode, seeding the defaults on first use. */
-export async function getRoutine(userId: string, mode: ScheduleMode): Promise<RoutineItemDTO[]> {
-  let rows = await prisma.routineItem.findMany({
-    where: { userId, mode },
+/** The user's (non-archived) routine. Empty until they create items (onboarding or Routine tab). */
+export async function getRoutine(userId: string): Promise<RoutineItemDTO[]> {
+  const rows = await prisma.routineItem.findMany({
+    where: { userId, archived: false },
     orderBy: { order: "asc" },
   });
-  if (rows.length === 0) {
-    await seedRoutine(userId, mode);
-    rows = await prisma.routineItem.findMany({
-      where: { userId, mode },
-      orderBy: { order: "asc" },
-    });
-  }
-  return rows.filter((r) => !r.archived).map(toDTO);
+  return rows.map(toDTO);
 }
 
 export interface WeekData {
@@ -64,7 +45,6 @@ export interface WeekData {
   itemsByDate: Record<string, ChecklistItem[]>;
   valuesByDate: Record<string, DayValues>;
   extras: ExtraDTO[];
-  shifts: ShiftDTO[];
 }
 
 // How far back an unfinished one-off item keeps rolling over.
@@ -75,13 +55,9 @@ export async function loadWeek(userId: string, monday: string): Promise<WeekData
   const dates = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const sunday = dates[6];
 
-  // A week can straddle the prep/normal boundary, so load each mode it touches.
-  const modes = [...new Set(dates.map(getScheduleMode))];
-  const routines = Object.fromEntries(
-    await Promise.all(modes.map(async (m) => [m, await getRoutine(userId, m)] as const))
-  ) as Partial<Record<ScheduleMode, RoutineItemDTO[]>>;
-
-  const [entries, extras, shifts] = await Promise.all([
+  const [areas, routine, entries, extras] = await Promise.all([
+    getAreas(userId),
+    getRoutine(userId),
     prisma.checklistEntry.findMany({
       where: { userId, date: { gte: monday, lte: sunday } },
     }),
@@ -96,16 +72,13 @@ export async function loadWeek(userId: string, monday: string): Promise<WeekData
       },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.workShift.findMany({
-      where: { userId, date: { gte: monday, lte: sunday } },
-      orderBy: [{ date: "asc" }, { start: "asc" }],
-    }),
   ]);
+  const areaOrder = areas.map((a) => a.key);
 
   const itemsByDate: Record<string, ChecklistItem[]> = {};
   const valuesByDate: Record<string, DayValues> = {};
   for (const date of dates) {
-    itemsByDate[date] = itemsForDate(routines[getScheduleMode(date)] ?? [], date);
+    itemsByDate[date] = itemsForDate(routine, date, areaOrder);
     valuesByDate[date] = {};
   }
   for (const e of entries) valuesByDate[e.date][e.itemKey] = e.value;
@@ -121,7 +94,6 @@ export async function loadWeek(userId: string, monday: string): Promise<WeekData
       label: x.label,
       doneOn: x.doneOn,
     })),
-    shifts: shifts.map((s) => ({ id: s.id, date: s.date, start: s.start, end: s.end, note: s.note })),
   };
 }
 
@@ -156,33 +128,33 @@ const STREAK_LOOKBACK_DAYS = 90;
 
 /**
  * Current and best consecutive-day streaks over the last ~90 days. A day
- * counts as "full" when every scheduled routine/uni item was finished or
+ * counts as "full" when every scheduled routine item was finished or
  * skipped -- dayScore already drops skipped items from that day's own
  * total (see progress.ts), so skipping something today owes it for the
  * week (see buildWeekRows) but never breaks the streak. One-off tasks
- * aren't counted here, just the routine + uni schedule. Today isn't
- * required to be full yet for the current streak -- it just doesn't count
- * until it is.
+ * aren't counted here, just the routine. Today isn't required to be full
+ * yet for the current streak -- it just doesn't count until it is.
  */
 export async function computeStreak(userId: string, today: string): Promise<{ current: number; best: number }> {
   const start = addDays(today, -STREAK_LOOKBACK_DAYS);
   const dates: string[] = [];
   for (let d = start; d <= today; d = addDays(d, 1)) dates.push(d);
 
-  const modes = [...new Set(dates.map(getScheduleMode))];
-  const routines = Object.fromEntries(
-    await Promise.all(modes.map(async (m) => [m, await getRoutine(userId, m)] as const))
-  ) as Partial<Record<ScheduleMode, RoutineItemDTO[]>>;
+  const [areas, routine, entries] = await Promise.all([
+    getAreas(userId),
+    getRoutine(userId),
+    prisma.checklistEntry.findMany({
+      where: { userId, date: { gte: start, lte: today } },
+    }),
+  ]);
+  const areaOrder = areas.map((a) => a.key);
 
-  const entries = await prisma.checklistEntry.findMany({
-    where: { userId, date: { gte: start, lte: today } },
-  });
   const valuesByDate: Record<string, DayValues> = {};
   for (const date of dates) valuesByDate[date] = {};
   for (const e of entries) valuesByDate[e.date][e.itemKey] = e.value;
 
   const fullDay = dates.map((date) => {
-    const items = itemsForDate(routines[getScheduleMode(date)] ?? [], date);
+    const items = itemsForDate(routine, date, areaOrder);
     const { done, total } = dayScore(items, valuesByDate[date], []);
     return total === 0 || done === total;
   });

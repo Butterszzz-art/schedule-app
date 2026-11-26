@@ -1,14 +1,13 @@
 import { addDays } from "@/lib/time";
 import type { ChecklistItem, DayValues, ExtraDTO } from "./types";
 
-// Progress maths for checklist items. Kept free of the uni timetable import
-// so client components can use it cheaply.
+// Progress maths for checklist items. Kept free of DB/React imports so
+// client components can use it cheaply.
 
 // Sentinel stored in place of a real value when an item is excused for the
 // day (something came up) -- distinct from "nothing logged yet" so it can
 // show its own state and drop out of the day's done/total instead of
-// counting as missed. Items in the "anchors" area can't be skipped (see
-// ChecklistRow / areas.ts) -- those are the one non-negotiable left.
+// counting as missed.
 export const SKIPPED = -1;
 
 export function isSkipped(value: number | undefined): boolean {

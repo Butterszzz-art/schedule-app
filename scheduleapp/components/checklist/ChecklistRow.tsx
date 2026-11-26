@@ -57,9 +57,6 @@ export function ChecklistRow({
   const state = f === 1 ? "done" : f > 0 ? "partial" : "open";
   const v = value ?? 0;
   const full = fullValue(item);
-  // The sleep anchors are the one thing in the checklist that still can't
-  // move -- everything else can be excused for the day if something comes up.
-  const canSkip = item.area !== "anchors";
 
   return (
     <div
@@ -134,7 +131,7 @@ export function ChecklistRow({
           </div>
         )}
       </div>
-      {canSkip && state !== "done" && (
+      {state !== "done" && (
         <button
           type="button"
           onClick={() => onChange(skipped ? 0 : SKIPPED)}

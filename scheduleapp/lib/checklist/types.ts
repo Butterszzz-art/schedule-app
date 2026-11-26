@@ -1,12 +1,11 @@
 import type { BlockKind } from "@/lib/schedule/types";
 
-export type Area = "anchors" | "body" | "uni" | "fuel" | "mind" | "content" | "work" | "life";
 export type ItemType = "check" | "count" | "chunks";
 
-/** One line of the daily routine, as defined in code or stored in RoutineItem. */
+/** One line of the daily routine, stored in RoutineItem. `area` is a UserArea.key. */
 export interface RoutineItemDef {
   key: string;
-  area: Area;
+  area: string;
   kind: BlockKind;
   label: string;
   hint: string;
@@ -22,6 +21,15 @@ export interface RoutineItemDTO extends RoutineItemDef {
   order: number;
 }
 
+/** A user-defined checklist area. */
+export interface AreaDTO {
+  id: string;
+  key: string;
+  label: string;
+  kind: BlockKind;
+  order: number;
+}
+
 /** A checklist line resolved for one specific date. */
 export type ChecklistItem = Omit<RoutineItemDef, "days">;
 
@@ -33,14 +41,6 @@ export interface ExtraDTO {
   scope: ExtraScope;
   label: string;
   doneOn: string | null;
-}
-
-export interface ShiftDTO {
-  id: string;
-  date: string;
-  start: string; // "HH:MM"
-  end: string; // "HH:MM"
-  note: string;
 }
 
 export type GoalScope = "week" | "month";

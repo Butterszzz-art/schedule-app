@@ -24,7 +24,7 @@ async function main() {
     create: {
       email: email.toLowerCase(),
       password: passwordHash,
-      settings: { create: { semester: 1 } },
+      settings: { create: {} },
     },
   });
 
