@@ -1,44 +1,135 @@
-name: TestFlight
+name: iOS → TestFlight
 
-# Manual only: a TestFlight upload burns a build number and Apple Developer
-# resources, so this doesn't run on every push -- trigger it from the
-# Actions tab (or `gh workflow run testflight.yml`) when you actually want
-# to ship a build.
+# Builds the iOS app on a GitHub-hosted Mac, signs it with Apple's
+# cloud-managed certificates, and uploads it to App Store Connect, where it
+# appears in TestFlight after Apple finishes processing (usually 5-30 min).
+#
+# Run it from the Actions tab -> "iOS -> TestFlight" -> Run workflow.
+# One-time setup: register the bundle id (com.scheduling.productivity),
+# create the app in App Store Connect, create an App Store Connect API key
+# (Team Key, Admin role), and add four repo secrets -- APPLE_TEAM_ID,
+# ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the whole .p8 file contents).
+
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version shown to testers (leave empty to keep the one in the Xcode project)"
+        required: false
+        default: ""
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
 
 jobs:
-  beta:
-    runs-on: macos-latest
+  # Quick check on a cheap Linux runner: are the secrets valid, does the key
+  # have the right role, do the bundle ID and app record exist? Fails with a
+  # plain explanation before any Mac minutes are spent.
+  apple-setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check Apple keys and setup
+        working-directory: scheduleapp
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: node scripts/asc-check.mjs
+
+  testflight:
+    needs: apple-setup
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
+      - name: Load trimmed Apple IDs
+        env:
+          RAW_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          RAW_KEY: ${{ secrets.ASC_KEY_ID }}
+          RAW_ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          echo "APPLE_TEAM_ID=$(printf '%s' "$RAW_TEAM" | tr -d '[:space:]')" >> "$GITHUB_ENV"
+          echo "ASC_KEY_ID=$(printf '%s' "$RAW_KEY" | tr -d '[:space:]')" >> "$GITHUB_ENV"
+          echo "ASC_ISSUER_ID=$(printf '%s' "$RAW_ISSUER" | tr -d '[:space:]')" >> "$GITHUB_ENV"
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scheduleapp/package-lock.json
 
-      - name: Install web app dependencies
+      - name: Install dependencies
         working-directory: scheduleapp
         run: npm ci
 
-      - name: Sync the Capacitor iOS project
+      - name: Sync Capacitor into the iOS project
         working-directory: scheduleapp
         run: npx cap sync ios
 
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.3"
-          bundler-cache: true
-          working-directory: scheduleapp/ios/App
+      - name: Show Xcode version
+        run: xcodebuild -version
 
-      - name: Build and upload to TestFlight
-        working-directory: scheduleapp/ios/App
+      - name: Write App Store Connect API key
+        working-directory: scheduleapp
         env:
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
-          BUILD_NUMBER: ${{ github.run_number }}
-        run: bundle exec fastlane beta
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/asc"
+          node scripts/asc-check.mjs "$RUNNER_TEMP/asc/AuthKey.p8" > /dev/null
+
+      # Archived unsigned: automatic signing at archive time wants a
+      # development profile, which needs a registered device. The export
+      # step below signs for App Store distribution, which doesn't.
+      - name: Archive
+        working-directory: scheduleapp
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          BUILD_NUMBER=$(( ${{ github.run_number }} + 100 ))
+          VERSION_ARG=""
+          if [ -n "$VERSION_INPUT" ]; then
+            if ! printf '%s' "$VERSION_INPUT" | grep -Eq '^[0-9]+(\.[0-9]+){0,2}$'; then
+              echo "::error::Version must look like 1.0 or 1.0.1"; exit 1
+            fi
+            VERSION_ARG="MARKETING_VERSION=$VERSION_INPUT"
+          fi
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            $VERSION_ARG
+          echo "Built build number $BUILD_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Export and upload to App Store Connect
+        working-directory: scheduleapp
+        run: |
+          sed "s/__TEAM_ID__/$APPLE_TEAM_ID/" ios/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          echo "Uploaded to App Store Connect. It shows up in TestFlight once Apple finishes processing." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"
