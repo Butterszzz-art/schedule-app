@@ -5,15 +5,12 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // than bundling a static export -- this app relies on server components and
 // server actions, which only run against the real backend.
 //
-// TODO before a real build: replace `appId` with your own reverse-DNS
-// bundle id (registered in the Apple Developer portal) and point
-// CAPACITOR_SERVER_URL at your deployed app.
 const config: CapacitorConfig = {
-  appId: "com.example.schedule",
+  appId: "com.scheduling.productivity",
   appName: "Schedule",
   webDir: "public", // unused in remote mode, but required by the CLI
   server: {
-    url: process.env.CAPACITOR_SERVER_URL ?? "https://schedule-app-git-mainstream-pivot-buttersz-projects1.vercel.app",
+    url: process.env.CAPACITOR_SERVER_URL ?? "https://schedule-app-six-sable.vercel.app",
     cleartext: false,
   },
 };
